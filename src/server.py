@@ -1,6 +1,7 @@
-import socket
+import asyncio
 import json
 import re
+import machine
 
 MAX_CLIENTS = 3
 
@@ -20,33 +21,35 @@ Content-Type: text/plain
 
 # region WEB_SERVER
 # Handle incoming HTTP requests and send to the appropriate handler
-def web_server(request_handler):
+async def web_server(request_handler):
     print("\nweb_server")
 
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind(("", 80))
-    s.listen(MAX_CLIENTS)
-
-    print("listening on port 80...")
-
-    break_flag = False
-    while True:
-        conn, addr = s.accept()
-        print(json.dumps({"client": addr}))
-
-        request = conn.recv(1024)
-        print("\nrequest:\n" + str(request))
-
-        break_flag = request_handler(conn, request)
-        conn.close()
-        
-        if (break_flag == True):
-            break
-
+    await asyncio.start_server(
+        lambda r, w: handle_client(r, w, request_handler),
+        "0.0.0.0",
+        80
+    )
 #endregion
 
+async def handle_client(reader, writer, request_handler):
+    request = await reader.read(1024)
+    print("\nrequest:\n" + str(request))
+
+    response, reset = await request_handler(request)
+    
+    writer.write(response.encode())
+    await writer.drain()
+    writer.close()
+    await writer.wait_closed()
+
+    # Reboot
+    if (reset == True):
+        await asyncio.sleep_ms(1000)
+        print("Rebooting...")
+        machine.soft_reset()
+
 # region ROUTES_GATEWAY
-def handle_request_gateway(conn, request, template_data):
+async def handle_request_gateway(request, template_data):
     path = _get_path(request)
 
     # GET /
@@ -61,10 +64,9 @@ def handle_request_gateway(conn, request, template_data):
         html = html.replace("{WIFI_OPTIONS}", options)
         html = html.replace("{IP_ADDRESS}", template_data["ip"])
 
-        conn.send(STATUS_OK)
-        conn.send(html)
-        conn.close()
-        return
+        response = STATUS_OK
+        response += html
+        return response, False
 
     # POST /connect
     elif (path == "/connect"):
@@ -75,21 +77,18 @@ def handle_request_gateway(conn, request, template_data):
 
         # Ensure required params are present
         if (param_ssid == None or param_password == None):
-            conn.send(STATUS_BAD_REQUEST)
-            conn.send("Missing required parameters")
-            conn.close()
-            return
+            response = STATUS_BAD_REQUEST
+            response += "Missing required parameters"
+            return response, False
         # Validate params
         if (not bool(re.search(r"^[a-zA-Z0-9_ \.\-]+$", str(param_ssid)))):
-            conn.send(STATUS_BAD_REQUEST)
-            conn.send("Invalid ssid")
-            conn.close()
-            return
+            response = STATUS_BAD_REQUEST
+            response += "Invalid ssid"
+            return response, False
         if (not len(str(param_password)) >= 8):
-            conn.send(STATUS_BAD_REQUEST)
-            conn.send("Invalid password")
-            conn.close()
-            return
+            response = STATUS_BAD_REQUEST
+            response += "Invalid password"
+            return response, False
         
         # Write wifi credentials to file
         wifi = {"ssid":param_ssid, "password":param_password}
@@ -103,21 +102,18 @@ def handle_request_gateway(conn, request, template_data):
             html = f.read()
         html = html.replace("{TITLE}", title)
 
-        conn.send(STATUS_OK)
-        conn.send(html)
-        conn.close()
-        # Signal to break the server loop and reboot
-        return True
+        response = STATUS_OK
+        response += html
+        return response, True
 
     # Default
     else:
-        conn.send(STATUS_NOT_FOUND)
-        conn.close()
-        return
+        response = STATUS_NOT_FOUND
+        return response, False
 # endregion
 
 # region ROUTES_STATUS
-def handle_request_status(conn, request, template_data):
+async def handle_request_status(request, template_data):
     path = _get_path(request)
 
     # GET /
@@ -128,19 +124,17 @@ def handle_request_status(conn, request, template_data):
             html = f.read()
         html = html.replace("{TITLE}", title)
 
-        conn.send(STATUS_OK)
-        conn.send(html)
-        conn.close()
-        return
+        response = STATUS_OK
+        response += html
+        return response, False
     
     # Default
     else:
-        conn.send(STATUS_NOT_FOUND)
-        conn.close()
-        return
+        response = STATUS_NOT_FOUND
+        return response, False
 # endregion
 
-# region HELPERS 
+# region HELPERS
 
 # Get path from request
 def _get_path(request):
