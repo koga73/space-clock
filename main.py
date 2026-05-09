@@ -21,7 +21,8 @@ async def mode_default(wlan):
     }))
 
     ip = wlan.ifconfig()[0]
-    display.show(ip.replace(".", "_"))
+    await display.show_async(ip.replace(".", "_"), loops = 1)
+    display.show("----")
 #endregion
 
 # region MODE_AP
