@@ -45,8 +45,8 @@ TM1637_MSB = const(128)  # msb is the decimal point or the colon depending on yo
 # 0x20 = TOP_LEFT
 # 0x40 = MIDDLE
 
-# 0-9, a-z, blank, dash, star, underscore
-_SEGMENTS = bytearray(b'\x3F\x06\x5B\x4F\x66\x6D\x7D\x07\x7F\x6F\x77\x7C\x39\x5E\x79\x71\x3D\x76\x06\x1E\x76\x38\x55\x54\x3F\x73\x67\x50\x6D\x78\x3E\x1C\x2A\x76\x6E\x5B\x00\x40\x63\x08')
+# 0-9, a-z, blank, dash, star, underscore, caret
+_SEGMENTS = bytearray(b'\x3F\x06\x5B\x4F\x66\x6D\x7D\x07\x7F\x6F\x77\x7C\x39\x5E\x79\x71\x3D\x76\x06\x1E\x76\x38\x55\x54\x3F\x73\x67\x50\x6D\x78\x3E\x1C\x2A\x76\x6E\x5B\x00\x40\x63\x08\x01')
 
 class TM1637(object):
     """Library for quad 7-segment LED modules based on the TM1637 LED driver."""
@@ -155,6 +155,8 @@ class TM1637(object):
             return _SEGMENTS[38] # star/degrees
         if o == 45:
             return _SEGMENTS[37] # dash
+        if o == 94:
+            return _SEGMENTS[40] # caret
         if o == 95:
             return _SEGMENTS[39] # underscore
         if o >= 65 and o <= 90:

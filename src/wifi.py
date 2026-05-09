@@ -3,10 +3,6 @@ import binascii
 import network
 import json
 
-from machine import Pin
-
-led = Pin("LED", Pin.OUT)
-
 MAX_NETWORKS = 10
 MAX_RETRIES = 20
 

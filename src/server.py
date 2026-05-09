@@ -43,6 +43,7 @@ async def handle_client(reader, writer, request_handler):
     await writer.wait_closed()
 
     # Reboot
+    # TODO: Move reboot to reference in main
     if (reset == True):
         await asyncio.sleep_ms(1000)
         print("Rebooting...")
