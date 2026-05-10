@@ -2,7 +2,7 @@ import asyncio
 
 from lib.l76x import L76X
 
-_DELAY = 500
+_DELAY = 100
 
 class GPS(object):
     # Constructor
@@ -15,11 +15,12 @@ class GPS(object):
         gps = self.gps
 
         # Increase baudrate
-        gps.L76X_Send_Command(gps.SET_NMEA_BAUDRATE_115200)
-        await asyncio.sleep_ms(2000)
-        gps.L76X_Set_Baudrate(115200)
+        # gps.L76X_Send_Command(gps.SET_NMEA_BAUDRATE_115200)
+        # await asyncio.sleep_ms(2000)
+        # gps.L76X_Set_Baudrate(115200)
         
         # Timing
+        # gps.L76X_Send_Command(gps.SET_POS_FIX_400MS)
         gps.L76X_Send_Command(gps.SET_POS_FIX_1S)
         gps.L76X_Send_Command(gps.SET_SYNC_PPS_NMEA_ON)
         
@@ -28,13 +29,10 @@ class GPS(object):
         gps.L76X_Exit_BackupMode()
     
         while True:
-            gps.L76X_Gat_GNRMC()
-            if(gps.Status == 1):
-                print("gps has lock")
-            else:
-                print("gps no lock")
+            gps.L76X_Loop()
             
+            print(f"Satellites = {gps.Satellites}")
             print(f"Time = {gps.Time_H}:{gps.Time_M}:{gps.Time_S}")
             print(f"Lat = {gps.Lat}, Lon = {gps.Lon}")
 
-            await asyncio.sleep_ms(_DELAY)
+            # await asyncio.sleep_ms(_DELAY)

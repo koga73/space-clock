@@ -82,11 +82,11 @@ async def main():
 
     except OSError as err:
         print('not found "wifi.txt"')
-        await mode_ap()
+        # await mode_ap()
     
     except RuntimeError as err:
         print(err)
-        await _reboot()
+        # await _reboot()
     
     # Heartbeat
     while True:
