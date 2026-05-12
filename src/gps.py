@@ -38,6 +38,11 @@ class GPS(object):
     def get_timestamp(self):
         return self.gps.Timestamp
 
+    def get_datetime(self):
+        gps = self.gps
+        weekday = 0 # Not supported by GPS
+        return (gps.Time_Year, gps.Time_Month, gps.Time_Day, weekday, gps.Time_Hours, gps.Time_Minutes, gps.Time_Seconds, gps.Time_Microseconds)
+
     def get_coords(self):
         gps = self.gps
         return gps.Lat, gps.Lon
