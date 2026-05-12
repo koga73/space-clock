@@ -2,7 +2,7 @@ import asyncio
 
 from lib.l76x import L76X
 
-_DELAY = 100
+_DELAY = 1000
 
 class GPS(object):
     # Constructor
@@ -30,9 +30,20 @@ class GPS(object):
     
         while True:
             gps.L76X_Loop()
-            
-            print(f"Satellites = {gps.Satellites}")
-            print(f"Time = {gps.Time_H}:{gps.Time_M}:{gps.Time_S}")
-            print(f"Lat = {gps.Lat}, Lon = {gps.Lon}")
+            await asyncio.sleep_ms(_DELAY)
 
-            # await asyncio.sleep_ms(_DELAY)
+    def get_satellites(self):
+        return self.gps.Satellites
+    
+    def get_timestamp(self):
+        return self.gps.Timestamp
+
+    def get_coords(self):
+        gps = self.gps
+        return gps.Lat, gps.Lon
+
+    def get_lat(self):
+        return self.gps.Lat
+
+    def get_lon(self):
+        return self.gps.Lon

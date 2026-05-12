@@ -18,13 +18,24 @@ gps = GPS()
 async def mode_default(wlan):
     print("\nmode_default")
 
-    await web_server(lambda request: handle_request_status(request, {
-        "title": "Pico GPS Clock NTP"
-    }))
+    await web_server(_handle_request)
 
     ip = wlan.ifconfig()[0]
     await display.show_async(ip.replace(".", "_"), loops = 1)
     display.show("----")
+
+def _handle_request(request):
+    satellites = gps.get_satellites()
+    timestamp = gps.get_timestamp()
+    lat, lon = gps.get_coords()
+
+    return handle_request_status(request, {
+        "title": "Pico GPS Clock NTP",
+        "satellites": satellites,
+        "timestamp": timestamp,
+        "lat": lat,
+        "lon": lon
+    })
 #endregion
 
 # region MODE_AP
@@ -78,7 +89,7 @@ async def main():
         
         display.show("_-^-_-^-_")
         wlan = await wlan_connect(wifi["ssid"], wifi["password"])
-        await mode_default(wlan)
+        # await mode_default(wlan)
 
     except OSError as err:
         print('not found "wifi.txt"')
@@ -86,11 +97,16 @@ async def main():
     
     except RuntimeError as err:
         print(err)
-        # await _reboot()
+        await _reboot()
     
-    # Heartbeat
+    # Main loop
     while True:
-        await asyncio.sleep_ms(5)
+        print(f"Satellites = {gps.get_satellites()}")
+        print(f"Time = {gps.get_timestamp()}")
+        print(f"Lat = {gps.get_lat()}, Lon = {gps.get_lon()}")
+        
+        # display.show(f"{minutes}{str(seconds)[0:2]}")
+        await asyncio.sleep_ms(10000) # Update every 10 seconds
 # endregion
 
 try:

@@ -120,10 +120,18 @@ async def handle_request_status(request, template_data):
     # GET /
     if (path == "/"):
         title = template_data["title"]
+        satellites = template_data["satellites"]
+        timestamp = template_data["timestamp"]
+        lat = template_data["lat"]
+        lon = template_data["lon"]
         
         with open("static/status/index.html", "r") as f:
             html = f.read()
         html = html.replace("{TITLE}", title)
+        html = html.replace("{SATELLITES}", satellites)
+        html = html.replace("{TIMESTAMP}", timestamp)
+        html = html.replace("{LAT}", lat)
+        html = html.replace("{LON}", lon)
 
         response = STATUS_OK
         response += html

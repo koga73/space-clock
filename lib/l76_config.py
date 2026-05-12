@@ -25,6 +25,17 @@ class config(object):
     def Uart_ReceiveString(self, value): 
         data = self.ser.read(value)
         return data
+    
+    def Uart_ReceiveAll(self):
+        ser = self.ser
+
+        data = b""
+        while ser.any() > 0:
+            # Read available bytes without blocking
+            chunk = ser.read(ser.any())
+            if chunk:
+                data += chunk
+        return data
 
     def Uart_Set_Baudrate(self, Baudrate):
         self.ser = UART(0,baudrate=Baudrate,tx=Pin(0),rx=Pin(1))

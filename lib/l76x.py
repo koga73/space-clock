@@ -18,9 +18,7 @@ class L76X(object):
     Lat = 0.0
     Lon_area = 'E'
     Lat_area = 'W'
-    Time_H = 0
-    Time_M = 0
-    Time_S = 0
+    Timestamp = "0000-00-00 00:00:00.0" # Unix format
     Satellites = 0
     Lon_Baidu = 0.0
     Lat_Baidu = 0.0
@@ -92,23 +90,40 @@ class L76X(object):
         self.config.Uart_SendString(data)
         self.config.Uart_SendByte('\r')
         self.config.Uart_SendByte('\n')
-        print(data)
+        # print(data)
         
     def L76X_Loop(self):
-        raw_data = self.config.Uart_ReceiveString(BUFFSIZE)
+        raw_data = self.config.Uart_ReceiveAll()
         if raw_data is None:
             return
         for b in raw_data:
             try: self.parser.update(chr(b))
             except: continue
         
-        h, m, s = self.parser.timestamp
-        self.Time_H = h
-        self.Time_M = m
-        self.Time_S = s
+        day, month, year = self.parser.date
+        hours, minutes, seconds = self.parser.timestamp
+        self.Timestamp = self._timestamp(year, month, day, hours, minutes, seconds)
+
         self.Lat = self.parser.latitude
         self.Lon = self.parser.longitude
+        
         self.Satellites = self.parser.satellites_in_use
+    
+    def _timestamp(self, year, month, day, hours, minutes, seconds):
+        # Pad with leading zero if needed
+        year = "20{:02d}".format(year)
+        month = "{:02d}".format(month)
+        day = "{:02d}".format(day)
+        hours = "{:02d}".format(hours)
+        minutes = "{:02d}".format(minutes)
+        
+        s = str(seconds).split(".")
+        seconds = "{:02d}".format(int(s[0]))
+
+        timestamp = f"{year}-{month}-{day} {hours}:{minutes}:{seconds}"
+        if (len(s) == 2):
+            timestamp += f".{s[1]}"
+        return timestamp
 
     def transformLat(self, x, y):
         ret = -100.0 + 2.0 * x + 3.0 * y + 0.2 * y * y + 0.1 * x * y + 0.2 *math.sqrt(abs(x))
