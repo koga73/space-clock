@@ -13,11 +13,6 @@ class GPS(object):
     # Scroll during loop
     async def loop(self):
         gps = self.gps
-
-        # Increase baudrate
-        # gps.L76X_Send_Command(gps.SET_NMEA_BAUDRATE_115200)
-        # await asyncio.sleep_ms(2000)
-        # gps.L76X_Set_Baudrate(115200)
         
         # Timing
         gps.L76X_Send_Command(gps.SET_POS_FIX_400MS)

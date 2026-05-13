@@ -2,7 +2,7 @@ import asyncio
 import machine
 import re
 
-from src.filesystem import wifi_write, settings_write
+from src.filesystem import boot_write, wifi_write, settings_write
 
 # region HTTP_STATUS
 STATUS_OK = "HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n"
@@ -92,6 +92,8 @@ async def handle_request_gateway(request, template_data):
         
         # Write wifi credentials to file
         wifi_write(param_ssid, param_password)
+        # Set boot mode to default
+        boot_write("default")
 
         # Return HTML
         title = template_data["title"]
