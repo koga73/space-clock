@@ -1,3 +1,5 @@
+# https://github.com/waveshare/L76X-GPS-Module/blob/master/python/L76X.py
+
 from machine import Pin
 import time
 

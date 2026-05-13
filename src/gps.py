@@ -2,7 +2,7 @@ import asyncio
 
 from lib.l76x import L76X
 
-_DELAY = 1000
+_DELAY = 250
 
 class GPS(object):
     # Constructor
@@ -20,8 +20,7 @@ class GPS(object):
         # gps.L76X_Set_Baudrate(115200)
         
         # Timing
-        # gps.L76X_Send_Command(gps.SET_POS_FIX_400MS)
-        gps.L76X_Send_Command(gps.SET_POS_FIX_1S)
+        gps.L76X_Send_Command(gps.SET_POS_FIX_400MS)
         gps.L76X_Send_Command(gps.SET_SYNC_PPS_NMEA_ON)
         
         # Output format

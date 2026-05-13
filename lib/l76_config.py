@@ -1,3 +1,5 @@
+# https://github.com/waveshare/L76X-GPS-Module/blob/master/python/config.py
+
 from machine import UART, Pin
 
 class L76_Config(object):

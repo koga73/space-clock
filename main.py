@@ -108,21 +108,19 @@ async def _loop_gps():
             if (delta_pps > RTC_UPDATE_DELAY):
                 pps_ready = True
 
-        # Update display
-        timestamp = gps.get_timestamp()
-        if (timestamp != last_timestamp):
-            # If we haven't set RTC yet, go ahead and use NEMA time 
+            # NEMA update if we have a timestamp and PPS is not ready yet
             if (last_timestamp == ""):
-                rtc.datetime(gps.get_datetime())
+                timestamp = gps.get_timestamp()
+                if (timestamp != ""):
+                    last_timestamp = timestamp
+                    
+                    rtc.datetime(gps.get_datetime())
 
-                print("\nnema update")
-                print(f"time = {timestamp}")
-                print(f"lat = {gps.get_lat()}, lon = {gps.get_lon()}")
-                print(f"satellites = {gps.get_satellites()}")
+                    print("\nnema update")
+                    print(f"time = {timestamp}")
+                    print(f"lat = {gps.get_lat()}, lon = {gps.get_lon()}")
+                    print(f"satellites = {gps.get_satellites()}")
             
-            last_timestamp = timestamp
-            
-            _display_current_time()
         
         # Tick
         await asyncio.sleep_ms(1000)
@@ -132,24 +130,27 @@ def _handle_pps(pin):
     global pps_ready, pps_last_updated
     
     # Only update RTC if PPS is ready and delay has passed
-    if (pps_ready == False):
-        return
-    pps_ready = False
-    pps_last_updated = time.ticks_ms()
+    if (pps_ready == True):
+        pps_ready = False
+        pps_last_updated = time.ticks_ms()
 
-    # NEMA current time
-    seconds = time.mktime(gps.get_datetime())
-    # Plus difference between now and last NEMA update
-    delta = time.ticks_diff(time.ticks_ms(), gps.get_last_updated())
-    # Plus 1 second for this tick
-    seconds_to_add = (delta // 1000) + 1
-    # Set RTC
-    rtc.datetime(time.localtime(seconds + seconds_to_add))
+        # NEMA current time
+        dt = gps.get_datetime()
+        seconds = time.mktime((dt[0], dt[1], dt[2], dt[4], dt[5], dt[6], dt[3], 0))
+        # Plus difference between now and last NEMA update
+        delta = time.ticks_diff(time.ticks_ms(), gps.get_last_updated())
+        # Plus 1 second for this tick
+        seconds_to_add = (delta // 1000) + 1
+        # Set RTC
+        lt = time.localtime(seconds + seconds_to_add)
+        rtc.datetime((lt[0], lt[1], lt[2], lt[6], lt[3], lt[4], lt[5], 0))
 
-    print("\npps update")
-    print(f"time = {gps.get_timestamp()}")
-    print(f"lat = {gps.get_lat()}, lon = {gps.get_lon()}")
-    print(f"satellites = {gps.get_satellites()}")
+        print("\npps update")
+        print(f"time = {gps.get_timestamp()}")
+        print(f"lat = {gps.get_lat()}, lon = {gps.get_lon()}")
+        print(f"satellites = {gps.get_satellites()}")
+
+    _display_current_time()
 
 def _display_current_time():
     now = rtc.datetime()
@@ -227,7 +228,7 @@ async def main():
 
 async def _reboot():
     await asyncio.sleep_ms(1000)
-    print("Rebooting...")
+    print("rebooting...")
     display.show("    ")
     machine.soft_reset()
 # endregion
