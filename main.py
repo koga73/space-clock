@@ -4,11 +4,12 @@ import asyncio
 import machine
 from machine import Pin, RTC
 
-from src.filesystem import wifi_read, settings_read
+from src.button import Button
 from src.display import Display
 from src.gps import GPS
 from src.wifi import wlan_reset, wlan_scan, wlan_ap, wlan_connect
 from src.server import web_server, handle_request_gateway, handle_request_status
+from src.filesystem import boot_read, boot_write, wifi_read, settings_read
 
 AP_SSID = "rpi_pico_2"
 AP_PASS = None
@@ -21,8 +22,9 @@ SETTINGS_DEFAULTS = {
 RTC_UPDATE_DELAY = 30000
 
 # region GLOBALS
-rtc = RTC()
+button = Button(22)
 display = Display(Pin(18), Pin(19), Pin("LED", Pin.OUT))
+rtc = RTC()
 gps = GPS()
 
 pps = Pin(16, Pin.IN)
@@ -40,6 +42,9 @@ async def mode_default():
     
     print("\nmode_default")
 
+    # Start gps loop
+    asyncio.create_task(gps.loop())
+
     # See if we have settings saved
     print("\nsettings")
     f24hr, tz, dst = settings_read()
@@ -49,7 +54,7 @@ async def mode_default():
         timezone = tz
     if (dst != None):
         daylight_savings = dst
-
+    
     print(json.dumps({
         "format_24hr": format_24hr,
         "timezone": timezone,
@@ -73,7 +78,7 @@ async def mode_default():
         await display.show_async(ip.replace(".", "_"), loops = 1)
     
     # Main loop for GPS and display
-    await _loop_gps()
+    await _loop_default()
 
 def _handle_request(request, ip):
     satellites = gps.get_satellites()
@@ -90,21 +95,28 @@ def _handle_request(request, ip):
     })
 #endregion
 
-# region LOOP_GPS
-async def _loop_gps():
+# region LOOP_DEFAULT
+async def _loop_default():
     global pps, pps_ready, pps_last_updated
-
-    last_timestamp = ""
 
     pps.irq(trigger=Pin.IRQ_RISING, handler = _handle_pps)
 
-    print("\nloop gps")
+    print("\nloop default")
     display.show("_-^-_-^-_")
+    
+    last_timestamp = ""
 
     while True:
+        ticks_now = time.ticks_ms()
+
+        # If our check button function returns true, break
+        if (button.loop_button(ticks_now, button.default_released, button.default_held)):
+            break
+
         # Wait for PPS diff to be greater than RTC_UPDATE_DELAY so we don't update RTC too often
         if (pps_ready == False):
-            delta_pps = time.ticks_diff(time.ticks_ms(), pps_last_updated)
+            delta_pps = time.ticks_diff(ticks_now, pps_last_updated)
+            
             if (delta_pps > RTC_UPDATE_DELAY):
                 pps_ready = True
 
@@ -120,11 +132,12 @@ async def _loop_gps():
                     print(f"time = {timestamp}")
                     print(f"lat = {gps.get_lat()}, lon = {gps.get_lon()}")
                     print(f"satellites = {gps.get_satellites()}")
-            
-        
-        # Tick
-        await asyncio.sleep_ms(1000)
 
+        # Tick
+        await asyncio.sleep_ms(200)
+# endregion
+
+# region PPS
 # Set RTC to GPS time on PPS signal IRQ handler
 def _handle_pps(pin):
     global pps_ready, pps_last_updated
@@ -132,16 +145,18 @@ def _handle_pps(pin):
     # Only update RTC if PPS is ready and delay has passed
     if (pps_ready == True):
         pps_ready = False
-        pps_last_updated = time.ticks_ms()
 
+        ticks_now = time.ticks_ms()
+        pps_last_updated = ticks_now
+        
         # NEMA current time
         dt = gps.get_datetime()
-        seconds = time.mktime((dt[0], dt[1], dt[2], dt[4], dt[5], dt[6], dt[3], 0))
         # Plus difference between now and last NEMA update
-        delta = time.ticks_diff(time.ticks_ms(), gps.get_last_updated())
+        delta = time.ticks_diff(ticks_now, gps.get_last_updated())
         # Plus 1 second for this tick
         seconds_to_add = (delta // 1000) + 1
         # Set RTC
+        seconds = time.mktime((dt[0], dt[1], dt[2], dt[4], dt[5], dt[6], dt[3], 0))
         lt = time.localtime(seconds + seconds_to_add)
         rtc.datetime((lt[0], lt[1], lt[2], lt[6], lt[3], lt[4], lt[5], 0))
 
@@ -150,14 +165,14 @@ def _handle_pps(pin):
         print(f"lat = {gps.get_lat()}, lon = {gps.get_lon()}")
         print(f"satellites = {gps.get_satellites()}")
 
-    _display_current_time()
+        _display_current_time(lt[3], lt[4], lt[5], False)
+    else:
+        now = rtc.datetime()
+        _display_current_time(now[4], now[5], now[6], True)
+# endregion
 
-def _display_current_time():
-    now = rtc.datetime()
-    hours = now[4]
-    minutes = now[5]
-    seconds = now[6]
-    
+# region DISPLAY
+def _display_current_time(hours, minutes, seconds, colon = True):
     # Format time based on settings
     if (timezone != 0):
         hours = (hours + timezone) % 24
@@ -180,7 +195,7 @@ def _display_current_time():
     minutes_str = "{:02d}".format(minutes)
     seconds_str = "{:02d}".format(seconds)
     
-    display.show(f'{hours_str}{minutes_str}', colon = True)
+    display.show(f'{hours_str}{minutes_str}', colon = colon)
 # endregion
 
 # region MODE_AP
@@ -201,6 +216,23 @@ async def mode_ap():
     }))
 
     display.show(AP_SSID)
+
+    # Main loop for AP
+    await _loop_ap()
+# endregion
+
+# region LOOP_AP
+async def _loop_ap():
+    print("\nloop ap")
+
+    while True:
+        ticks_now = time.ticks_ms()
+
+        # If our check button function returns true, break
+        if (button.loop_button(ticks_now, button.ap_released, button.ap_held)):
+            break
+
+        await asyncio.sleep_ms(200)
 # endregion
 
 # region MAIN
@@ -216,11 +248,12 @@ async def main():
     # Reset wlan interfaces
     await wlan_reset()
 
-    # Start gps loop
-    asyncio.create_task(gps.loop())
-
     try:
-        await mode_default()
+        mode = boot_read()
+        if (mode == "ap"):
+            await mode_ap()
+        else:
+            await mode_default()
     except RuntimeError as err:
         print(err)
     

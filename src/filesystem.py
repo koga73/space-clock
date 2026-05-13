@@ -1,26 +1,38 @@
+import os
 import json
+
+FILE_BOOT = "boot.txt"
+FILE_SETTINGS = "settings.txt"
+FILE_WIFI = "wifi.txt"
+
+# region BOOT
+def boot_write(mode):
+    _write(FILE_BOOT, {
+        "mode": mode
+    })
+
+def boot_read():
+    boot = _read(FILE_BOOT)
+    if (boot == None):
+        return None
+    else:
+        return boot["mode"]
+# endregion
 
 # region SETTINGS
 def settings_write(format_24hr, timezone, daylight_savings):
-    settings = {
+    _write(FILE_SETTINGS, {
         "format_24hr": format_24hr,
         "tz":timezone,
         "dst":daylight_savings
-    }
-    print("\n", settings)
-    with open("settings.txt", "w") as f:
-        f.write(json.dumps(settings))
+    })
 
 def settings_read():
-    try:
-        with open("settings.txt", "r") as f:
-            data = f.read()
-        print("settings.txt", data)
-        settings = json.loads(data)
-        return settings["format_24hr"], settings["tz"], settings["dst"]
-    except OSError as err:
-        print('not found "settings.txt"')
+    settings = _read(FILE_SETTINGS)
+    if (settings == None):
         return None, None, None
+    else:
+        return settings["format_24hr"], settings["tz"], settings["dst"]
 # endregion
 
 # region WIFI
@@ -43,4 +55,28 @@ def wifi_read():
     except OSError as err:
         print('not found "wifi.txt"')
         return None, None
+# endregion
+
+# region INTERNAL
+def _write(file, data):
+    print(f"\n{file}", data)
+    with open(file, "w") as f:
+        f.write(json.dumps(data))
+
+def _read(file):
+    try:
+        with open(file, "r") as f:
+            data = f.read()
+        print(file, data)
+        return json.loads(data)
+    except OSError as err:
+        print(f'not found "{file}"')
+        return None
+
+def _delete(file):
+    try:
+        os.remove(file)
+        print(f'deleted "{file}"')
+    except OSError as err:
+        print(f'not found "{file}"')
 # endregion
