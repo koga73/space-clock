@@ -110,7 +110,7 @@ class L76X(object):
         if (year + 2000, month, day, hours, minutes, seconds, microseconds) == (self.Time_Year, self.Time_Month, self.Time_Day, self.Time_Hours, self.Time_Minutes, self.Time_Seconds, self.Time_Microseconds):
             return
         
-        self.Last_Updated = time.ticks_ms()
+        self.Last_Updated = time.ticks_us()
         self.Time_Year = year + 2000 # GPS returns year as 2 digit format
         self.Time_Month = month
         self.Time_Day = day
