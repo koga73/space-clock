@@ -15,11 +15,16 @@ from src.filesystem import boot_read, boot_write, wifi_read, settings_read
 AP_SSID = "rpi_pico_2"
 AP_PASS = None
 
-SETTINGS_DEFAULTS = {
+DEFAULT_SETTINGS = {
     "format_24hr": False,
     "tz": -4, # Eastern Time
     "dst": "us"
 }
+DEFAULT_WIFI = {
+    "ssid": None,
+    "password": None
+}
+
 RTC_UPDATE_DELAY = 30000
 
 # region GLOBALS
@@ -32,9 +37,9 @@ pps = Pin(16, Pin.IN)
 pps_ready = False
 pps_last_updated = time.ticks_ms()
 
-format_24hr = SETTINGS_DEFAULTS["format_24hr"]
-timezone = SETTINGS_DEFAULTS["tz"]
-daylight_savings = SETTINGS_DEFAULTS["dst"]
+format_24hr = DEFAULT_SETTINGS["format_24hr"]
+timezone = DEFAULT_SETTINGS["tz"]
+daylight_savings = DEFAULT_SETTINGS["dst"]
 # endregion
 
 # region MODE_DEFAULT
@@ -67,7 +72,14 @@ async def mode_default():
     transport = None
     
     print("\nwifi")
-    ssid, password = wifi_read()
+    ssid = DEFAULT_WIFI["ssid"]
+    password = DEFAULT_WIFI["password"]
+    file_ssid, file_password = wifi_read()
+    if (file_ssid != None):
+        ssid = file_ssid
+    if (file_password != None):
+        password = file_password
+
     if (ssid != None):
         display.show("_-^-_-^-_")
         
