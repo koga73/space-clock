@@ -9,6 +9,7 @@ from src.display import Display
 from src.gps import GPS
 from src.wifi import wlan_reset, wlan_scan, wlan_ap, wlan_connect
 from src.server import web_server, handle_request_gateway, handle_request_status
+from src.ntp import ntp_server
 from src.filesystem import boot_read, boot_write, wifi_read, settings_read
 
 AP_SSID = "rpi_pico_2"
@@ -62,6 +63,9 @@ async def mode_default():
     }))
     
     # See if we should connect to wifi
+    server = None
+    transport = None
+    
     print("\nwifi")
     ssid, password = wifi_read()
     if (ssid != None):
@@ -72,13 +76,22 @@ async def mode_default():
         ip = wlan.ifconfig()[0]
         
         # Start web server
-        await web_server(lambda request: _handle_request(request, ip))
+        server = await web_server(lambda request: _handle_request(request, ip))
         
+        # Start the ntp server
+        transport = await ntp_server()
+
         # Show IP address on display once
         await display.show_async(ip.replace(".", "_"), loops = 1)
     
     # Main loop for GPS and display
     await _loop_default()
+
+    # Clean up
+    if (server != None):
+        server.close()
+    if (transport != None):
+        transport.close()
 
 def _handle_request(request, ip):
     satellites = gps.get_satellites()
@@ -209,7 +222,7 @@ async def mode_ap():
     ap = await wlan_ap(AP_SSID, AP_PASS)
     ip = ap.ifconfig()[0]
 
-    await web_server(lambda request: handle_request_gateway(request, {
+    server = await web_server(lambda request: handle_request_gateway(request, {
         "title": "Connect to WiFi",
         "networks": networks,
         "ip": ip
@@ -219,6 +232,8 @@ async def mode_ap():
 
     # Main loop for AP
     await _loop_ap()
+
+    server.close()
 # endregion
 
 # region LOOP_AP

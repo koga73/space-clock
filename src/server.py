@@ -23,15 +23,16 @@ Content-Type: text/plain
 async def web_server(request_handler):
     print("\nweb_server")
 
-    await asyncio.start_server(
+    server = await asyncio.start_server(
         lambda r, w: handle_client(r, w, request_handler),
         "0.0.0.0",
         80
     )
+    return server
 
 async def handle_client(reader, writer, request_handler):
     request = await reader.read(1024)
-    print("\nrequest:\n" + str(request))
+    print("\nhttp request:\n" + str(request))
 
     response, reset = await request_handler(request)
     
