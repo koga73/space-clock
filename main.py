@@ -10,11 +10,10 @@ from src.gps import GPS
 from src.wifi import wlan_reset, wlan_scan, wlan_ap, wlan_connect
 from src.server import web_server, handle_request_gateway, handle_request_status
 from src.ntp import ntp_server
-from src.filesystem import boot_read, boot_write, wifi_read, settings_read
+from src.filesystem import boot_read, wifi_read, settings_read
 
 AP_SSID = "rpi_pico_2"
 AP_PASS = None
-
 
 DEFAULT_WIFI = {
     "ssid": None,
@@ -72,7 +71,7 @@ async def mode_default():
         server = await web_server(lambda request: _handle_request(request, ip))
         
         # Start the ntp server
-        transport = await ntp_server()
+        transport = await ntp_server(clock.time_seconds)
 
         # Show IP address on display once
         await display.show_async(ip.replace(".", "_"), loops = 1)
@@ -130,7 +129,7 @@ async def _loop_default():
                 if (timestamp != ""):
                     last_timestamp = timestamp
                     
-                    clock.set_datetime_us(gps.get_datetime())
+                    clock.set_datetime(gps.get_datetime())
 
                     print("\nnema update")
                     print(f"time = {timestamp}")
@@ -138,7 +137,7 @@ async def _loop_default():
                     print(f"satellites = {gps.get_satellites()}")
 
         # Tick
-        await asyncio.sleep_ms(200)
+        await asyncio.sleep_ms(250)
 # endregion
 
 # region PPS
@@ -158,13 +157,9 @@ def _handle_pps(pin):
         # Plus difference between now and last NEMA update
         delta = time.ticks_diff(ticks_now, gps.get_last_updated())
         # Plus 1 second for this tick
-        seconds_to_add = (delta // 1000000) + 1
-        microseconds_to_add = delta % 1000000
+        offset = delta + 1000000
         # Set Clock time to GPS time plus delta
-        seconds = time.mktime((dt[0], dt[1], dt[2], dt[4], dt[5], dt[6], dt[3], 0))
-        # year, month, mday, hour, minute, second, weekday, yearday
-        lt = time.gmtime(seconds + seconds_to_add)
-        clock.set_datetime_us((lt[0], lt[1], lt[2], lt[6], lt[3], lt[4], lt[5], dt[7] + microseconds_to_add))
+        clock.set_datetime(dt, offset, ticks_now)
         
         print("\npps update")
         print(f"time = {gps.get_timestamp()}")
@@ -178,7 +173,8 @@ def _handle_pps(pin):
 
 # region DISPLAY
 def _display_current_time(colon = True):
-    print(clock.time())
+    if (clock.last_time_set == 0):
+        return
 
     now = clock.localtime()
     hours = now[4]
@@ -231,7 +227,7 @@ async def _loop_ap():
         if (button.loop_button(time.ticks_ms(), button.ap_released, button.ap_held)):
             break
 
-        await asyncio.sleep_ms(200)
+        await asyncio.sleep_ms(250)
 # endregion
 
 # region MAIN

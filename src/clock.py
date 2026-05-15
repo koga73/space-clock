@@ -11,8 +11,8 @@ class Clock:
 
     def __init__(self, format_24hr = None, tz = None, dst = None):
         self.time_us = 0
+        self.last_time_set = 0
 
-        self._last_time_set = time.ticks_us()
         self._ds = None
         
         self.init_localtime(format_24hr, tz, dst)
@@ -115,8 +115,11 @@ class Clock:
     # GET datetime UTC tuple where subseconds = microseconds
     # dt = (year, month, day, weekday, hours, minutes, seconds, subseconds)
     def get_datetime(self):
+        if (self.last_time_set == 0):
+            return (1970, 1, 1, 4, 0, 0, 0, 0)
+
         t = self.time_us
-        delta = time.ticks_diff(time.ticks_us(), self._last_time_set)
+        delta = time.ticks_diff(time.ticks_us(), self.last_time_set)
         now = t + delta
 
         seconds = now // 1000000
@@ -126,16 +129,20 @@ class Clock:
 
     # SET datetime UTC where subseconds = microseconds
     # dt = (year, month, day, weekday, hours, minutes, seconds, subseconds)
-    def set_datetime_us(self, dt):
+    def set_datetime(self, dt, offset = 0, set_at = None):
         # Convert datetime tuple to seconds since epoch (UNIX: January 1, 1970)
         seconds = time.mktime((dt[0], dt[1], dt[2], dt[4], dt[5], dt[6], dt[3], 0))
+        
         # Assume the subseconds in tuple is in Microseconds
-        self.time_us = seconds * 1000000 + dt[7]
-        self._last_time_set = time.ticks_us()
+        self.time_us = seconds * 1000000 + dt[7] + offset
+        self.last_time_set = set_at if (set_at != None) else time.ticks_us()
     # endregion
 
     # dt = (year, month, day, weekday, hours, minutes, seconds, subseconds)
     def localtime(self):
+        if (self.last_time_set == 0):
+            return (1970, 1, 1, 4, 0, 0, 0, 0)
+        
         # Get current datetime in UTC as tuple with microsecond precision
         dt = self.get_datetime()
 
@@ -150,9 +157,12 @@ class Clock:
         return (year, month, mday, weekday, hour, minute, second, dt[7])
 
     # GET time in seconds since epoch (UNIX: January 1, 1970)
-    def time(self):
+    def time_seconds(self):
+        if (self.last_time_set == 0):
+            return 0
+
         t = self.time_us
-        delta = time.ticks_diff(time.ticks_us(), self._last_time_set)
+        delta = time.ticks_diff(time.ticks_us(), self.last_time_set)
         now = t + delta
-        return now / 1000000
+        return int(now // 1000000)
     # endregion
