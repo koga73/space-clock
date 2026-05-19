@@ -129,13 +129,13 @@ class Clock:
 
     # SET datetime UTC where subseconds = microseconds
     # dt = (year, month, day, weekday, hours, minutes, seconds, subseconds)
-    def set_datetime(self, dt, set_at = None):
+    def set_datetime(self, dt, set_at):
         # Convert datetime tuple to seconds since epoch (UNIX: January 1, 1970)
         seconds = time.mktime((dt[0], dt[1], dt[2], dt[4], dt[5], dt[6], dt[3], 0))
-        
+
         # Assume the subseconds in tuple is in Microseconds
         self.time_us = seconds * 1000000 + dt[7]
-        self.last_time_set = set_at if (set_at != None) else time.ticks_us()
+        self.last_time_set = set_at
     # endregion
 
     # dt = (year, month, day, weekday, hours, minutes, seconds, subseconds)

@@ -114,10 +114,11 @@ class L76X(object):
         
         s = str(seconds_raw).split(".")
         seconds = int(s[0])
-        microseconds = int(s[1] if len(s) > 1 else "0")
+        frac = s[1] if len(s) > 1 else "0"
+        microseconds = int((frac + "000000")[:6]) # .5 -> 500000, .05 -> 50000
 
         # Ensure timestamp has changed
-        if (year + 2000, month, day, hours, minutes, seconds, microseconds * 1000000) == (self.Time_Year, self.Time_Month, self.Time_Day, self.Time_Hours, self.Time_Minutes, self.Time_Seconds, self.Time_Microseconds):
+        if (year + 2000, month, day, hours, minutes, seconds, microseconds) == (self.Time_Year, self.Time_Month, self.Time_Day, self.Time_Hours, self.Time_Minutes, self.Time_Seconds, self.Time_Microseconds):
             return False
         
         self.Last_Updated = time.ticks_us()
@@ -127,7 +128,7 @@ class L76X(object):
         self.Time_Hours = hours
         self.Time_Minutes = minutes
         self.Time_Seconds = seconds
-        self.Time_Microseconds = microseconds * 1000000
+        self.Time_Microseconds = microseconds
         self.Timestamp = self._timestamp(year, month, day, hours, minutes, seconds, microseconds)
 
         # Update coordinates
@@ -151,6 +152,7 @@ class L76X(object):
         hours = "{:02d}".format(hours)
         minutes = "{:02d}".format(minutes)
         seconds = "{:02d}".format(seconds)
+        microseconds = "{:06d}".format(microseconds)
 
         return f"{year}-{month}-{day} {hours}:{minutes}:{seconds}.{microseconds}"
 

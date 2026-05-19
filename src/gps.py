@@ -23,12 +23,11 @@ class GPS():
         gps.L76X_Set_Baudrate(115200)
 
         # Timing
-        gps.L76X_Send_Command(gps.SET_POS_FIX_200MS)
+        gps.L76X_Send_Command(gps.SET_POS_FIX_1S)
         gps.L76X_Send_Command(gps.SET_PPS_ON)
 
         # Output format
         gps.L76X_Send_Command(gps.SET_NMEA_OUTPUT)
-        gps.L76X_Send_Command(gps.SET_NAV_MODE_STATIONARY)
         gps.L76X_Exit_BackupMode()
 
         self.gps = gps
@@ -38,12 +37,13 @@ class GPS():
 
     # PPS signal IRQ handler
     def _handle_pps(self, _pin):
+        self._pps_tick = time.ticks_us()
+
         # If we are already true then the last message was not processed - so clear the buffer
         if (self._pps_ready == True):
             self.gps.L76X_Flush()
         
         self._pps_ready = True
-        self._pps_tick = time.ticks_us()
     
     # Call from main loop
     def try_receive(self):
