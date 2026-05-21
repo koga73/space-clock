@@ -28,7 +28,6 @@ button = Button(22)
 display = Display(Pin(18), Pin(19), Pin("LED", Pin.OUT))
 gps = GPS(16)
 
-last_timestamp = ""
 last_status_time = 0
 # endregion
 
@@ -98,7 +97,7 @@ def _handle_request(request, ip):
 
 # region LOOP_DEFAULT
 async def _loop_default():
-    global last_timestamp, last_status_time
+    global last_status_time
     
     print("\nloop default")
     display.show("^^^^----____----^^^^")
@@ -111,12 +110,10 @@ async def _loop_default():
             break
         
         # Try to receive GPS data on PPS signal
-        gps.try_receive()
+        has_fix = gps.try_receive()
 
         # If we have a new GPS timestamp, update the clock and display
-        timestamp = gps.get_timestamp()
-        if (timestamp != last_timestamp):
-            last_timestamp = timestamp
+        if (has_fix):
 
             # Update Clock with GPS time on PPS signal
             clock.set_datetime(gps.get_datetime(), gps.get_last_pps_tick())
@@ -128,7 +125,7 @@ async def _loop_default():
                 colon = False
 
                 print("\ngps status")
-                print(f"time = {gps.get_timestamp()}")
+                print(f"time = {gps.get_datetime()}")
                 print(f"lat = {gps.get_lat()}, lon = {gps.get_lon()}")
                 print(f"satellites = {gps.get_satellites()}")
 

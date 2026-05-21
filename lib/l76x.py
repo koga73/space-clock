@@ -111,9 +111,13 @@ class L76X(object):
         # Update time
         day, month, year = self.parser.date
         hours, minutes, seconds_raw = self.parser.timestamp
+
+        # Ensure we have date
+        if (year == 0 or month == 0 or day == 0):
+            return False
         
         s = str(seconds_raw).split(".")
-        seconds = int(s[0])
+        seconds = int(s[0]) - 2 # Offset for some reason
         frac = s[1] if len(s) > 1 else "0"
         microseconds = int((frac + "000000")[:6]) # .5 -> 500000, .05 -> 50000
 
@@ -141,10 +145,6 @@ class L76X(object):
         return True
     
     def _timestamp(self, year, month, day, hours, minutes, seconds, microseconds = 0):
-        # Ensure we have date
-        if (year == 0 and month == 0 and day == 0):
-            return ""
-        
         # Pad with leading zero if needed
         year = "20{:02d}".format(year)
         month = "{:02d}".format(month)

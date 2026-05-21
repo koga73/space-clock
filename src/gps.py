@@ -47,9 +47,22 @@ class GPS():
     
     # Call from main loop
     def try_receive(self):
-        if (self._pps_ready == True):
+        if (not self._pps_ready):
+            return False
+        
+        delta_ms = time.ticks_diff(time.ticks_us(), self._pps_tick) // 1000
+        
+        # Wait small delay to start parsing
+        if (delta_ms >= 80):
+            if (self.gps.L76X_Receive()):
+                self._pps_ready = False
+                return True
+        
+        # If we have not received then clear ready flag
+        if (delta_ms >= 900):
             self._pps_ready = False
-            self.gps.L76X_Receive()
+        
+        return False 
 
     def get_last_pps_tick(self):
         return self._pps_tick
@@ -63,7 +76,12 @@ class GPS():
     def get_datetime(self):
         gps = self.gps
         weekday = 0 # Not supported by GPS
-        return (gps.Time_Year, gps.Time_Month, gps.Time_Day, weekday, gps.Time_Hours, gps.Time_Minutes, gps.Time_Seconds, gps.Time_Microseconds)
+        return (
+            gps.Time_Year, gps.Time_Month, gps.Time_Day,
+            weekday,
+            gps.Time_Hours, gps.Time_Minutes, gps.Time_Seconds,
+            0 # gps.Time_Microseconds
+        )
 
     def get_timestamp(self):
         return self.gps.Timestamp
