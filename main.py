@@ -24,8 +24,8 @@ STATUS_DELAY = 15000
 
 # region GLOBALS
 clock = Clock()
-button = Button(22)
-display = Display(Pin(18), Pin(19), Pin("LED", Pin.OUT))
+button = Button(20)
+display = Display(Pin(5), Pin(4), Pin("LED", Pin.OUT))
 gps = GPS(16)
 
 last_status_time = 0
