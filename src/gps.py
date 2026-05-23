@@ -38,7 +38,7 @@ class GPS():
     # PPS signal IRQ handler
     def _handle_pps(self, _pin):
         self._pps_tick = time.ticks_us()
-
+        
         # If we are already true then the last message was not processed - so clear the buffer
         if (self._pps_ready == True):
             self.gps.L76X_Flush()
@@ -47,29 +47,17 @@ class GPS():
     
     # Call from main loop
     def try_receive(self):
-        if (not self._pps_ready):
-            return False
-        
-        delta_ms = time.ticks_diff(time.ticks_us(), self._pps_tick) // 1000
-        
-        # Wait small delay to start parsing
-        if (delta_ms >= 80):
-            if (self.gps.L76X_Receive()):
-                self._pps_ready = False
-                return True
-        
-        # If we have not received then clear ready flag
-        if (delta_ms >= 900):
+        did_update = self.gps.L76X_Receive()
+
+        if (self._pps_ready and did_update):
             self._pps_ready = False
+            return True
         
-        return False 
+        return False
 
-    def get_last_pps_tick(self):
-        return self._pps_tick
+    def get_pps_delta(self):
+        return time.ticks_diff(self.gps.Last_Updated, self._pps_tick)
 
-    def get_last_updated(self):
-        return self.gps.Last_Updated
-    
     def get_satellites(self):
         return self.gps.Satellites
 

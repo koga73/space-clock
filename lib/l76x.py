@@ -116,14 +116,23 @@ class L76X(object):
         if (year == 0 or month == 0 or day == 0):
             return False
         
+        # print(seconds_raw)
+
         s = str(seconds_raw).split(".")
-        seconds = int(s[0]) - 2 # Offset for some reason
+        seconds = int(s[0])
         frac = s[1] if len(s) > 1 else "0"
         microseconds = int((frac + "000000")[:6]) # .5 -> 500000, .05 -> 50000
 
-        # Ensure timestamp has changed
-        if (year + 2000, month, day, hours, minutes, seconds, microseconds) == (self.Time_Year, self.Time_Month, self.Time_Day, self.Time_Hours, self.Time_Minutes, self.Time_Seconds, self.Time_Microseconds):
-            return False
+        # Ensure has changed
+        if (
+            year + 2000, month, day,
+            hours, minutes, seconds,
+            microseconds
+        ) == (
+            self.Time_Year, self.Time_Month, self.Time_Day,
+            self.Time_Hours, self.Time_Minutes, self.Time_Seconds,
+            self.Time_Microseconds
+        ): return False
         
         self.Last_Updated = time.ticks_us()
         self.Time_Year = year + 2000 # GPS returns year as 2 digit format

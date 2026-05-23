@@ -1,7 +1,7 @@
 import time
 import asyncio
 import machine
-from machine import Pin
+from machine import Pin, RTC
 
 from src.clock import Clock
 from src.button import Button
@@ -23,6 +23,7 @@ DEFAULT_WIFI = {
 STATUS_DELAY = 15000
 
 # region GLOBALS
+rtc = RTC()
 clock = Clock()
 button = Button(20)
 display = Display(Pin(5), Pin(4), Pin("LED", Pin.OUT))
@@ -55,7 +56,7 @@ async def mode_default():
     if (file_password != None):
         password = file_password
 
-    if (ssid != None):
+    if (ssid != None and ssid != ""):
         display.show("_-^-_-^-_")
         
         # Connect to wifi
@@ -110,13 +111,16 @@ async def _loop_default():
             break
         
         # Try to receive GPS data on PPS signal
-        has_fix = gps.try_receive()
+        did_update = gps.try_receive()
 
         # If we have a new GPS timestamp, update the clock and display
-        if (has_fix):
-
+        if (did_update):
             # Update Clock with GPS time on PPS signal
-            clock.set_datetime(gps.get_datetime(), gps.get_last_pps_tick())
+            datetime = gps.get_datetime()
+            # Update our custom clock
+            clock.set_datetime(datetime, gps.get_pps_delta())
+            # Update RTC but it is not as accurate
+            rtc.datetime(datetime)
 
             # Periodic update
             colon = True
@@ -125,7 +129,7 @@ async def _loop_default():
                 colon = False
 
                 print("\ngps status")
-                print(f"time = {gps.get_datetime()}")
+                print(f"time = {datetime}")
                 print(f"lat = {gps.get_lat()}, lon = {gps.get_lon()}")
                 print(f"satellites = {gps.get_satellites()}")
 

@@ -181,6 +181,8 @@ class MicropyGPS(object):
         Updates UTC timestamp, latitude, longitude, Course, Speed, Date, and fix status
         """
 
+        # print("gprmc", self.gps_segments[1])
+
         # UTC Timestamp
         try:
             utc_string = self.gps_segments[1]
@@ -279,6 +281,8 @@ class MicropyGPS(object):
         """Parse Geographic Latitude and Longitude (GLL)Sentence. Updates UTC timestamp, latitude,
         longitude, and fix status"""
 
+        # print("gpgll", self.gps_segments[5])
+
         # UTC Timestamp
         try:
             utc_string = self.gps_segments[5]
@@ -350,6 +354,8 @@ class MicropyGPS(object):
     def gpgga(self):
         """Parse Global Positioning System Fix Data (GGA) Sentence. Updates UTC timestamp, latitude, longitude,
         fix status, satellites in use, Horizontal Dilution of Precision (HDOP), altitude, geoid height and fix status"""
+
+        #print("gpgga", self.gps_segments[1])
 
         try:
             # UTC Timestamp

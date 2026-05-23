@@ -118,24 +118,20 @@ class Clock:
         if (self.last_time_set == 0):
             return (1970, 1, 1, 4, 0, 0, 0, 0)
 
-        t = self.time_us
-        delta = time.ticks_diff(time.ticks_us(), self.last_time_set)
-        now = t + delta
+        seconds, microseconds = self.time_seconds()
 
-        seconds = now // 1000000
-        microseconds = now % 1000000
         year, month, mday, hour, minute, second, weekday, yearday = time.gmtime(seconds)
         return (year, month, mday, weekday, hour, minute, second, microseconds)
 
     # SET datetime UTC where subseconds = microseconds
     # dt = (year, month, day, weekday, hours, minutes, seconds, subseconds)
-    def set_datetime(self, dt, set_at):
+    def set_datetime(self, dt, pps_delta_us = 0):
         # Convert datetime tuple to seconds since epoch (UNIX: January 1, 1970)
         seconds = time.mktime((dt[0], dt[1], dt[2], dt[4], dt[5], dt[6], dt[3], 0))
 
         # Assume the subseconds in tuple is in Microseconds
-        self.time_us = seconds * 1000000 + dt[7]
-        self.last_time_set = set_at
+        self.time_us = seconds * 1000000 + dt[7] - pps_delta_us
+        self.last_time_set = time.ticks_us()
     # endregion
 
     # dt = (year, month, day, weekday, hours, minutes, seconds, subseconds)
@@ -143,23 +139,20 @@ class Clock:
         if (self.last_time_set == 0):
             return (1970, 1, 1, 4, 0, 0, 0, 0)
         
-        # Get current datetime in UTC as tuple with microsecond precision
-        dt = self.get_datetime()
-
-        # Convert datetime tuple to seconds since epoch (UNIX: January 1, 1970)
-        seconds = time.mktime((dt[0], dt[1], dt[2], dt[4], dt[5], dt[6], dt[3], 0))
+        seconds, microseconds = self.time_seconds()
+        
         if (self._ds != None):
             # Adjust seconds for timezone and daylight saving time
             seconds = self._ds.localtime(seconds)
         
         # Convert seconds back to datetime tuple with microsecond precision
         year, month, mday, hour, minute, second, weekday, yearday = time.gmtime(seconds)
-        return (year, month, mday, weekday, hour, minute, second, dt[7])
+        return (year, month, mday, weekday, hour, minute, second, microseconds)
 
     # GET time in seconds since epoch (UNIX: January 1, 1970)
     def time_seconds(self):
         if (self.last_time_set == 0):
-            return 0
+            return 0, 0
 
         t = self.time_us
         delta = time.ticks_diff(time.ticks_us(), self.last_time_set)

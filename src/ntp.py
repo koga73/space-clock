@@ -41,8 +41,8 @@ async def _udp_loop(protocol, transport, time_func):
         
         try:
             data, addr = transport.recvfrom(48)
-            recv_time = time_func()  # T2: capture receive timestamp immediately
-            protocol.datagram_received(data, addr, time_func, recv_time)
+            recv_time = time_func()
+            protocol.datagram_received(data, addr, recv_time, time_func)
         
         except OSError as e:
             # If transport is closed, break the loop
@@ -53,14 +53,14 @@ class NtpProtocol():
     def __init__(self, transport):
         self.transport = transport
 
-    def datagram_received(self, data, addr, time_func, recv_time):
+    def datagram_received(self, data, addr, recv_time, time_func):
         # NTP packages are ALWAYS 48 bytes
         if (len(data) != 48):
             raise ValueError("invalid ntp packet length: " + str(len(data)))
         
-        self.process_packet(data, addr, time_func, recv_time)
+        self.process_packet(data, addr, recv_time, time_func)
     
-    def process_packet(self, data, addr, time_func, recv_time):
+    def process_packet(self, data, addr, recv_time, time_func):
         print(f"\nntp request from {addr[0]}")
 
         # Extract Client Transmit Timestamp (bytes 40-47 in request)
@@ -70,9 +70,8 @@ class NtpProtocol():
         client_vn = (data[0] >> 3) & 0x7
 
         # T2: Receive timestamp — captured at recvfrom, before any processing delay
-        recv_seconds, recv_frac = recv_time
-        recv_ntp_sec = recv_seconds + _EPOCH_OFFSET
-        # Convert fractional microseconds to NTP fraction (2^32 / 1_000_000 ≈ 4294.967)
+        recv_sec, recv_frac = time_func()
+        recv_ntp_sec = recv_sec + _EPOCH_OFFSET
         recv_ntp_frac = recv_frac * 4295
 
         # Construct NTP Response Packet (48 bytes)
@@ -97,8 +96,8 @@ class NtpProtocol():
         response[36:40] = ustruct.pack("!I", recv_ntp_frac)
 
         # T3: Transmit timestamp — captured just before sending to exclude server processing time
-        xmit_seconds, xmit_frac = time_func()
-        xmit_ntp_sec = xmit_seconds + _EPOCH_OFFSET
+        xmit_sec, xmit_frac = time_func()
+        xmit_ntp_sec = xmit_sec + _EPOCH_OFFSET
         xmit_ntp_frac = xmit_frac * 4295
 
         # Transmit Timestamp (T3: when packet leaves server)
