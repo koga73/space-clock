@@ -1,7 +1,8 @@
 import time
 from machine import Pin
 
-from src.filesystem import boot_write
+from src.clock import Clock
+from src.filesystem import boot_write, settings_read, settings_write
 
 class Button(object):
     def __init__(self, pin):
@@ -32,6 +33,14 @@ class Button(object):
     # region DEFAULT
     def default_released(self, held_time):
         print(f"\nbutton released after {held_time} ms")
+
+        # Toggle 24hr format
+        f24hr, tz, dst = settings_read()
+        f24hr = not f24hr
+        settings_write(f24hr, tz, dst)
+        
+        clock = Clock.get_instance()
+        clock.init_localtime(f24hr, tz, dst)
 
     def default_held(self, held_time):
         print(f"\nbutton held for {held_time} ms")

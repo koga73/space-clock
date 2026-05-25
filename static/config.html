@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>CONFIGURATION | SPACE CLOCK</title>
+		
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1" />
+
+		<link rel="stylesheet" href="/css/styles.css" />
+	</head>
+	<body class="{BODY_CLASS}">
+		<h1>
+			<span class="name">SPACE CLOCK</span>
+			<br/>
+			<span>CONFIGURATION</span>
+		</h1>
+
+		<div class="state-updated">
+			<p>Configuration updated successfully</p>
+		</div>
+		<div class="state-reboot">
+			<p>Please wait while the device reboots</p>
+		</div>
+		<div class="state-reset">
+			<p>Reset successful</p>
+			<p>Please wait while the device reboots</p>
+		</div>
+
+		<div class="state-default">
+
+			<section id="config">
+				<h2>Configuration</h2>
+				<form method="POST">
+
+					<div class="grp grp-chk">
+						<input type="checkbox" id="chkFormat" name="format24hr"/>
+						<label for="chkFormat">Use 24-hour format</label>
+					</div>
+
+					<div class="grp">
+						<label for="sltTZ">Timezone:</label>
+						<select id="sltTZ" name="tz" required>
+							<option value="-10">(GMT-10:00) Pacific/Honolulu</option>
+							<option value="-9">(GMT-09:00) America/Anchorage</option>
+							<option value="-8">(GMT-08:00) America/Los_Angeles</option>
+							<option value="-7">(GMT-07:00) America/Denver</option>
+							<option value="-6">(GMT-06:00) America/Chicago</option>
+							<option value="-5">(GMT-05:00) America/New_York</option>
+							<option value="-3">(GMT-03:00) America/Sao_Paulo</option>
+							<option value="0">(GMT+00:00) UTC/Europe/London</option>
+							<option value="1">(GMT+01:00) Europe/Paris</option>
+							<option value="2">(GMT+02:00) Africa/Cairo</option>
+							<option value="4">(GMT+04:00) Asia/Dubai</option>
+							<option value="9">(GMT+09:00) Asia/Tokyo</option>
+							<option value="10">(GMT+10:00) Australia/Sydney</option>
+							<option value="12">(GMT+12:00) Pacific/Auckland</option>
+						</select>
+					</div>
+					
+					<div class="grp">
+						<label for="sltDST">Daylight savings:</label>
+						<select id="sltDST" name="dst" required>
+							<option value="none">NONE</option>
+							<option value="us">US/CA</option>
+							<option value="uk">UK/EU</option>
+							<option value="au">AU</option>
+						</select>
+					</div>
+
+					<input type="hidden" name="mode" value="update"/>
+					<button type="submit">Update</button>
+				</form>
+			</section>
+
+			<section id="control">
+				<h2>Control</h2>
+				
+				<ul>
+					<li>
+						<form method="POST">
+							<input type="hidden" name="mode" value="reboot"/>
+							<button type="submit">Reboot</button>
+						</form>
+					</li>
+					<li>
+						<form method="POST">
+							<input type="hidden" name="mode" value="reset"/>
+							<button type="submit">Reset</button>
+						</form>
+					</li>
+				</ul>
+			</section>
+			
+		</div>
+	</body>
+</html>

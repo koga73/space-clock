@@ -3,19 +3,30 @@ import json
 
 from lib.daylightsaving import StandardTimePolicy, DaylightSavingPolicy, DaylightSaving 
 
+_SINGLETON_ENFORCER = object()
+
 # Clock with microsecond precision, timezones and daylight saving time
 class Clock:
     DEFAULT_FORMAT_24HR = False
     DEFAULT_TZ = -5	# EST
     DEFAULT_DST = "us"
 
-    def __init__(self, format_24hr = None, tz = None, dst = None):
+    _instance = None
+
+    @staticmethod
+    def get_instance():
+        if (Clock._instance is None):
+            Clock._instance = Clock(_SINGLETON_ENFORCER)
+        return Clock._instance
+
+    def __init__(self, enforcer = None):
+        if (enforcer != _SINGLETON_ENFORCER):
+            raise RuntimeError("Cannot create instance, use singleton instead")
+
         self.time_us = 0
         self.last_time_set = 0
 
         self._ds = None
-        
-        self.init_localtime(format_24hr, tz, dst)
     
     # region DST
     def init_localtime(self, format_24hr = None, tz = None, dst = None):
@@ -158,4 +169,25 @@ class Clock:
         delta = time.ticks_diff(time.ticks_us(), self.last_time_set)
         now = t + delta
         return int(now // 1000000), int(now % 1000000)
+    
+    # What to show on the display
+    def time_display(self, digits = 4):
+        if (self.last_time_set == 0):
+            return "------" if digits == 6 else "----"
+
+        now = self.localtime()
+        hours = now[4]
+        minutes = now[5]
+        seconds = now[6]
+
+        if (not self.format_24hr):
+            hours = hours % 12
+            if (hours == 0):
+                hours = 12
+
+        hours_str = "{:2d}".format(hours)
+        minutes_str = "{:02d}".format(minutes)
+        seconds_str = "{:02d}".format(seconds)
+        
+        return f'{hours_str}{minutes_str}{seconds_str}' if digits == 6 else f'{hours_str}{minutes_str}'
     # endregion

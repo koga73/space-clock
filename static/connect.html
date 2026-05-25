@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>CONNECT TO WIFI | SPACE CLOCK</title>
+
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1" />
+
+		<link rel="stylesheet" href="/css/styles.css" />
+	</head>
+	<body class="{BODY_CLASS}">
+		<h1>
+			<span class="name">SPACE CLOCK</span>
+			<br/>
+			<span>CONNECT TO WIFI</span>
+		</h1>
+
+		<div class="state-reboot">
+			<p>Please wait while the device reboots</p>
+		</div>
+
+		<div class="state-default">
+
+			<section id="wifi">
+				<form method="POST">
+					<div class="grp">
+						<label for="sltWifi">Network:</label>
+						<select id="sltWifi" name="ssid" required>
+							<option value="" disabled selected>-- select a network --</option>
+							{WIFI_OPTIONS}
+						</select>
+					</div>
+		
+					<div class="grp">
+						<label for="txtPass">Password:</label>
+						<input id="txtPass" type="text" name="password" minlength="8" autocomplete="off"/>
+					</div>
+		
+					<button type="submit">Connect</button>
+				</form>
+			</section>
+
+			<a class="btn btn-secondary" href="/config">Configuration</a>
+
+		</div>
+	</body>
+</html>
