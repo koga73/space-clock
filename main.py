@@ -12,7 +12,7 @@ from src.server import web_server, handle_request_gateway, handle_request_status
 from src.ntp import ntp_server
 from src.filesystem import boot_read, wifi_read, settings_read
 
-AP_SSID = "rpi_pico_2"
+AP_SSID = "space_clock"
 AP_PASS = None
 
 DEFAULT_WIFI = {
@@ -88,7 +88,6 @@ def _handle_request(request, ip):
     lat, lon = gps.get_coords()
 
     return handle_request_status(request, {
-        "title": "Pico GPS Clock NTP",
         "satellites": satellites,
         "timestamp": timestamp,
         "lat": lat,

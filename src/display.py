@@ -15,7 +15,7 @@ class Display(object):
         self.text = " " * _DIGITS
         self.index = 0
         
-        self.display = TM1637(clk=clk, dio=dio)
+        self.display = TM1637(clk=clk, dio=dio, brightness = 3)
         self.led = led
 
     # Scroll during loop
@@ -84,3 +84,7 @@ class Display(object):
             self.led.on()
         else:
             self.led.off()
+
+    # 0-7
+    def set_brightness(self, brightness):
+        return self.display.brightness(brightness)
