@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>SPACE CLOCK</title>
+		
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1" />
+
+		<link rel="stylesheet" href="/css/styles.css" />
+	</head>
+	<body>
+		<h1>
+			<span class="name">SPACE CLOCK</span>
+			<br/>
+			<span>STATUS</span>
+		</h1>
+
+		<section id="time">
+			<h2>Time</h2>
+			<time datetime="{TIMESTAMP}">{TIME_DISPLAY}</time>
+		</section>
+
+		<section id="status">
+			<h2>Status</h2>
+			<dl>
+				<dt>Satellites</dt>
+				<dd>{SATELLITES}</dd>
+	
+				<dt>Time</dt>
+				<dd>{TIMESTAMP}</dd>
+	
+				<dt>Latitude</dt>
+				<dd>{LAT}</dd>
+				<dt>Longitude</dt>
+				<dd>{LON}</dd>
+			</dl>
+		</section>
+
+		<a class="btn btn-secondary" href="/config">Configuration</a>
+	</body>
+</html>

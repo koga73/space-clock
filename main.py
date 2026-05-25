@@ -24,7 +24,7 @@ STATUS_DELAY = 15000
 
 # region GLOBALS
 rtc = RTC()
-clock = Clock()
+clock = Clock.get_instance()
 button = Button(20)
 display = Display(Pin(5), Pin(4), Pin("LED", Pin.OUT))
 gps = GPS(16)
@@ -34,8 +34,6 @@ last_status_time = 0
 
 # region MODE_DEFAULT
 async def mode_default():
-    global format_24hr, timezone, daylight_savings
-    
     print("\nmode_default")
 
     # See if we have settings saved
@@ -64,7 +62,10 @@ async def mode_default():
         ip = wlan.ifconfig()[0]
         
         # Start web server
-        server = await web_server(lambda request: _handle_request(request, ip))
+        server = await web_server(
+            lambda request: _handle_request(request, ip),
+            _reboot
+        )
         
         # Start the ntp server
         transport = await ntp_server(clock.time_seconds)
@@ -92,7 +93,8 @@ def _handle_request(request, ip):
         "timestamp": timestamp,
         "lat": lat,
         "lon": lon,
-        "ip": ip
+        "ip": ip,
+        "time_display": clock.time_display()
     })
 #endregion
 
@@ -145,21 +147,7 @@ def _display_current_time(colon = True):
     if (clock.last_time_set == 0):
         return
 
-    now = clock.localtime()
-    hours = now[4]
-    minutes = now[5]
-    seconds = now[6]
-
-    if (not clock.format_24hr):
-        hours = hours % 12
-        if (hours == 0):
-            hours = 12
-
-    hours_str = "{:02d}".format(hours)
-    minutes_str = "{:02d}".format(minutes)
-    seconds_str = "{:02d}".format(seconds)
-    
-    display.show(f'{hours_str}{minutes_str}', colon = colon)
+    display.show(clock.time_display(), colon = colon)
 # endregion
 
 # region MODE_AP
@@ -173,11 +161,14 @@ async def mode_ap():
     ap = await wlan_ap(AP_SSID, AP_PASS)
     ip = ap.ifconfig()[0]
 
-    server = await web_server(lambda request: handle_request_gateway(request, {
-        "title": "Connect to WiFi",
-        "networks": networks,
-        "ip": ip
-    }))
+    server = await web_server(
+        lambda request: handle_request_gateway(request, {
+            "title": "Connect to WiFi",
+            "networks": networks,
+            "ip": ip
+        }),
+        _reboot
+    )
 
     display.show(AP_SSID)
 

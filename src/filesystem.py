@@ -57,6 +57,11 @@ def wifi_read():
         return None, None
 # endregion
 
+def delete_all():
+    _delete(FILE_BOOT)
+    _delete(FILE_SETTINGS)
+    _delete(FILE_WIFI)
+
 # region INTERNAL
 def _write(file, data):
     print(f"\n{file}", data)
