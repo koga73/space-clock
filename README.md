@@ -147,6 +147,10 @@ You can factory reset the device by clicking the "__Reset__" button in the web i
 
 This project can be built for around ~$50 at the time of writing
 
+### Schematic
+
+![SPACE CLOCK schematic](_artifacts/graphics/space-clock_schematic.png)
+
 ### Enable PPS on the Waveshare L76K
 
 For the most accurate time, there is a small modification needed to the _Waveshare L76K_ board which enables a PPS (Pulse Per Second) signal interrupt on `Pin 16`.
