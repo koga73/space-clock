@@ -8,7 +8,7 @@ ALWAYS RIGHT. AUTOMAGICALLY.
 
 ## What is the SPACE CLOCK ?
 
-The SPACE CLOCK sets itself using GPS signals to achieve microsecond accuracy of up to one millionth of a second. Not only is the SPACE CLOCK a physical clock, but it also acts as a network time server allowing you to sync accurate time across all of your network devices.
+The SPACE CLOCK sets itself using GPS signals to achieve microsecond accuracy of up to one millionth of a second. Not only is the SPACE CLOCK a physical clock, but it also acts as an __NTP__ server (network time server) allowing you to sync precise time across all of your network devices.
 
 ## Features
 
@@ -33,6 +33,7 @@ The SPACE CLOCK sets itself using GPS signals to achieve microsecond accuracy of
 - [M3x4mm screws](https://www.amazon.com/dp/B08H24W42K/)
 
 #### Optional for GPS
+
 - [GPS antenna](https://www.amazon.com/dp/B07Y6D76G9/) for housing internally
 - [ML1220 li-ion battery](https://www.amazon.com/dp/B088KT9HB9/) for preserving ephemeris information and hot starts
 
@@ -53,13 +54,17 @@ First boot and when no WiFi credentials are present will simply show the current
 
 If WiFi credentials are available it will attempt to connect, start web/ntp servers and then display the current time.
 
+> If WiFi fails to connect the device will reboot
+
 1. Power via USB-C, will display `----`
 2. Connect to saved wifi, will display `wave animation`
 3. Successful WiFi connection will display `IP address` once
 4. Start servers for web interface and ntp
 5. GPS to process UTC time, will display `rising / falling animation`
 
-> If WiFi fails to connect the device will reboot
+> You can view the [status page](http://{IP_ADDRESS}/status) when connected via _WiFi Mode_
+
+![SPACE CLOCK screenshot status](_artifacts/screenshots/web-interface_status.png)
 
 ### AP Mode
 
@@ -72,6 +77,10 @@ If WiFi credentials are available it will attempt to connect, start web/ntp serv
 7. __You select a WiFi network and enter its password__
 8. Device will reboot into _WiFi Mode_
 
+> You can view the [connect to wifi page](http://192.168.4.1/connect) when connected via _AP Mode_
+
+![SPACE CLOCK screenshot connect](_artifacts/screenshots/web-interface_connect.png)
+
 ## Configuration
 
 The SPACE CLOCK operates on UTC Time and uses the following localized defaults which can be changed:
@@ -80,7 +89,9 @@ The SPACE CLOCK operates on UTC Time and uses the following localized defaults w
 - __Timezone__: (GMT-05:00) America/New_York
 - __Daylight Savings__: US/CA
 
-> You can change these settings through the web configuration page [http://{IP_ADDRESS}/config](http://192.168.4.1/config) when connected via _WiFi Mode_ or _AP Mode_.
+> You can change these settings through the [configuration page](http://192.168.4.1/config) when connected via _WiFi Mode_ or _AP Mode_
+
+![SPACE CLOCK screenshot config](_artifacts/screenshots/web-interface_config.png)
 
 ### 24-hour format
 
@@ -189,10 +200,6 @@ The button on the bottom allows for short presses such as to change between 12-h
 
 One leg of the button should go to GND `Pin 13` / `Pin 28` and the other leg should attach to GP20 `Pin 26`
 
-### Assembly
-
-Solder connections on the mini solderable breadboard as specified. Connect the USB-C breakout board and Display as specified. Plug the Waveshare L76K into the solderable breadboard female headers and then the Pico into the Waveshare female headers
-
 ### 3D printed case
 
 The case consists of three parts, the display mount, the bottom plate and the top cover.
@@ -207,6 +214,10 @@ Use the appropriate M2/M3 screws listed in the bill-of-materials to mount the bo
 Inside the case cover is a pre-formed 0.25in cutout for an SMA connector if you want an external GPS antenna just can drill this out with a 0.25in forstner drill bit.
 
 If you do not want an external GPS antenna you can place a small ceramic GPS antenna internally. I stuck mine to the backside of the female headers with 3M VHB tape.
+
+### Assembly
+
+Solder connections on the mini solderable breadboard as specified. Connect the USB-C breakout board and Display as specified. Plug the Waveshare L76K into the solderable breadboard female headers and then the Pico into the Waveshare female headers
 
 ### Post your build!
 

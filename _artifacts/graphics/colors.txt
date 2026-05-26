@@ -1,0 +1,3 @@
+Red: #e12020
+Blue: #18a5e0
+Yellow: #e1da20
