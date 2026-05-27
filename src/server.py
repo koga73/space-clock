@@ -7,8 +7,8 @@ from src.filesystem import boot_write, wifi_write, settings_read, settings_write
 
 # region HTTP_STATUS
 STATUS_OK_HTML = "HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n"
-STATUS_OK_CSS = "HTTP/1.0 200 OK\r\nContent-type: text/css\r\n\r\n"
-STATUS_OK_TTF = "HTTP/1.0 200 OK\r\nContent-type: font/ttf\r\n\r\n"
+STATUS_OK_CSS = "HTTP/1.0 200 OK\r\nContent-type: text/css\r\nCache-Control: public, max-age=21600\r\n\r\n"
+STATUS_OK_TTF = "HTTP/1.0 200 OK\r\nContent-type: font/ttf\r\nCache-Control: public, max-age=21600\r\n\r\n"
 
 STATUS_BAD_REQUEST = """HTTP/1.1 400 Bad Request
 Content-Type: text/plain
@@ -239,7 +239,7 @@ def handle_request_shared(request, template_data):
         
         # mode: "update"
         if (param_mode == "update"):
-            param_format_24hr = _get_param(body, "format24hr")
+            param_format_24hr = _get_param(body, "format24hr", "bool")
             param_tz = _get_param(body, "tz")
             param_dst = _get_param(body, "dst")
 
@@ -361,17 +361,24 @@ def _get_body(request):
     return ""
 
 # Get param value from query string or body
-def _get_param(str, param):
+def _get_param(str, param, type = "str"):
     params = (str.split("?")[1] if "?" in str else str).split("&")
     keyval = next(filter(lambda p: p.startswith(param), params), None)
+    
     if (keyval == None):
+        if (type == "bool"):
+            return False
         return None
+    
     if ("=" in keyval):
         val = _url_decode(keyval.split("=")[1])
-        if (val == "true"):
-            return True
-        elif (val == "false"):
-            return False
+        
+        if (type == "bool"):
+            if (val == "true" or val == "on"):
+                return True
+            elif (val == "false" or val == "off" or val == "no"):
+                return False
+        
         return val
     else:
         return True

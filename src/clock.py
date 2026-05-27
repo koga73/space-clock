@@ -26,15 +26,22 @@ class Clock:
         self.time_us = 0
         self.last_time_set = 0
 
+        self.format_24hr = Clock.DEFAULT_FORMAT_24HR
+        self.tz = Clock.DEFAULT_TZ
+        self.dst = Clock.DEFAULT_DST
+
         self._ds = None
     
     # region LOCALE
     def set_locale(self, format_24hr = None, tz = None, dst = None):
-        self.format_24hr = format_24hr if format_24hr != None else Clock.DEFAULT_FORMAT_24HR
-        self.tz = tz if tz != None else Clock.DEFAULT_TZ
-        self.dst = dst if dst != None else Clock.DEFAULT_DST
+        if (format_24hr != None):
+            self.format_24hr = format_24hr
+        if (tz != None):
+            self.tz = tz
+        if (dst != None):
+            self.dst = dst
         
-        print("init_local", json.dumps({
+        print("set_locale", json.dumps({
             "format_24hr": format_24hr,
             "tz": tz,
             "dst": dst
@@ -111,11 +118,7 @@ class Clock:
             self._ds = None
     
     def get_locale(self):
-        return (
-            self.format_24hr if self.format_24hr != None else Clock.DEFAULT_FORMAT_24HR,
-            self.tz if self.tz != None else Clock.DEFAULT_TZ,
-            self.dst if self.dst != None else Clock.DEFAULT_DST
-        )
+        return (self.format_24hr, self.tz, self.dst)
 
     # dt = (year, month, day, weekday, hours, minutes, seconds, subseconds)
     def get_localtime(self):
@@ -127,6 +130,9 @@ class Clock:
         if (self._ds != None):
             # Adjust seconds for timezone and daylight saving time
             seconds = self._ds.localtime(seconds)
+        else:
+            # Adjust seconds for timezone only
+            seconds += self.tz * 60 * 60
         
         # Convert seconds back to datetime tuple with microsecond precision
         year, month, mday, hour, minute, second, weekday, yearday = time.gmtime(seconds)

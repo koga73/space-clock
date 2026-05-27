@@ -22,7 +22,7 @@ def boot_read():
 # region SETTINGS
 def settings_write(format_24hr, timezone, daylight_savings):
     _write(FILE_SETTINGS, {
-        "format_24hr": format_24hr,
+        "format_24hr": format_24hr == True,
         "tz":timezone,
         "dst":daylight_savings
     })
@@ -32,7 +32,7 @@ def settings_read():
     if (settings == None):
         return None, None, None
     else:
-        return settings["format_24hr"], settings["tz"], settings["dst"]
+        return settings["format_24hr"] == True, settings["tz"], settings["dst"]
 # endregion
 
 # region WIFI
