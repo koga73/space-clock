@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>CONNECT TO WIFI | SPACE CLOCK</title>
+		<title>CONNECT | SPACE CLOCK</title>
 
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -16,12 +16,13 @@
 		</h1>
 
 		<div class="state-reboot">
-			<p>Please wait while the device reboots</p>
+			<p>Please wait while the device&nbsp;reboots</p>
 		</div>
 
 		<div class="state-default">
 
 			<section id="wifi">
+				<h2>Wi-Fi</h2>
 				<form method="POST">
 					<div class="grp">
 						<label for="sltWifi">Network:</label>
@@ -40,7 +41,14 @@
 				</form>
 			</section>
 
-			<a class="btn btn-secondary" href="/config">Configuration</a>
+			<section id="options">
+				<h2>Options</h2>
+				<ul>
+					<li>
+						<a class="btn" href="/config">Config</a>
+					</li>
+				</ul>
+			</section>
 
 		</div>
 	</body>

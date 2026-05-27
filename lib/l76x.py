@@ -22,6 +22,8 @@ class L76X(object):
 
     Lon = 0.0
     Lat = 0.0
+    Altitude = 0.0
+    Height = 0.0
     
     Satellites = 0
 
@@ -90,6 +92,7 @@ class L76X(object):
         data = data + Temp[16]
         data = data + Temp[int(Check/16)]
         data = data + Temp[int(Check%16)]
+
         self.config.Uart_SendString(data)
         self.config.Uart_SendByte('\r')
         self.config.Uart_SendByte('\n')
@@ -147,7 +150,9 @@ class L76X(object):
         # Update coordinates
         self.Lat = self.parser.latitude
         self.Lon = self.parser.longitude
-        
+        self.Altitude = self.parser.altitude
+        self.Height = self.parser.geoid_height
+
         # Update satellites
         self.Satellites = self.parser.satellites_in_use
 

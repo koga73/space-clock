@@ -113,20 +113,20 @@ GPS satellites transmit time in UTC, as such you can change the localized timezo
 
 _Timezone_ can be set through the following selections in the web interface:
 
-- (GMT-10:00) Pacific/Honolulu
-- (GMT-09:00) America/Anchorage
-- (GMT-08:00) America/Los_Angeles
-- (GMT-07:00) America/Denver
-- (GMT-06:00) America/Chicago
-- (GMT-05:00) America/New_York
-- (GMT-03:00) America/Sao_Paulo
-- (GMT+00:00) UTC/Europe/London
-- (GMT+01:00) Europe/Paris
-- (GMT+02:00) Africa/Cairo
-- (GMT+04:00) Asia/Dubai
-- (GMT+09:00) Asia/Tokyo
-- (GMT+10:00) Australia/Sydney
-- (GMT+12:00) Pacific/Auckland
+- (GMT-10:00) Pacific / Honolulu
+- (GMT-09:00) America / Anchorage
+- (GMT-08:00) America / Los_Angeles
+- (GMT-07:00) America / Denver
+- (GMT-06:00) America / Chicago
+- (GMT-05:00) America / New_York
+- (GMT-03:00) America / Sao_Paulo
+- (GMT+00:00) UTC / Europe / London
+- (GMT+01:00) Europe / Paris
+- (GMT+02:00) Africa / Cairo
+- (GMT+04:00) Asia / Dubai
+- (GMT+09:00) Asia / Tokyo
+- (GMT+10:00) Australia / Sydney
+- (GMT+12:00) Pacific / Auckland
 
 ### Daylight savings
 

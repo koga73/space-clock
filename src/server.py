@@ -8,6 +8,8 @@ from src.filesystem import boot_write, wifi_write, settings_read, settings_write
 # region HTTP_STATUS
 STATUS_OK_HTML = "HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n"
 STATUS_OK_CSS = "HTTP/1.0 200 OK\r\nContent-type: text/css\r\n\r\n"
+STATUS_OK_TTF = "HTTP/1.0 200 OK\r\nContent-type: font/ttf\r\n\r\n"
+
 STATUS_BAD_REQUEST = """HTTP/1.1 400 Bad Request
 Content-Type: text/plain
 \r\n
@@ -33,12 +35,16 @@ async def web_server(request_handler, reboot_handler = None):
     return server
 
 async def handle_client(reader, writer, request_handler, reboot_handler = None):
-    request = await reader.read(1024)
+    request = await _read_http_request(reader)
     print("\nhttp request:\n" + str(request))
 
     response, reboot = await request_handler(request)
     
-    writer.write(response.encode())
+    if isinstance(response, bytes):
+        writer.write(response)
+    else:
+        writer.write(response.encode())
+    
     await writer.drain()
     writer.close()
     await writer.wait_closed()
@@ -126,14 +132,20 @@ async def handle_request_gateway(request, template_data):
 
 # region STATUS_ROUTES
 async def handle_request_status(request, template_data):
-    satellites = template_data["satellites"]
-    timestamp = template_data["timestamp"]
-    lat = template_data["lat"]
-    lon = template_data["lon"]
     ip = template_data["ip"]
+    
+    satellites = template_data["satellites"]
+    
     time_display = template_data["time_display"]
     time_display = f"{time_display[0:2]}:{time_display[2:4]}"
+    timestamp_utc = template_data["timestamp_utc"]
+    timestamp_local = template_data["timestamp_local"]
 
+    lat = template_data["lat"]
+    lon = template_data["lon"]
+    altitude = template_data["altitude"]
+    height = template_data["height"]
+    
     verb, path = _get_verb_path(request)
     print("\n", verb, path)
 
@@ -153,11 +165,14 @@ async def handle_request_status(request, template_data):
         with open("static/status.html", "r") as f:
             html = f.read()
         html = html.replace("{IP_ADDRESS}", ip)
-        html = html.replace("{TIMESTAMP}", timestamp)
-        html = html.replace("{TIME_DISPLAY}", time_display)
         html = html.replace("{SATELLITES}", str(satellites))
+        html = html.replace("{TIME_DISPLAY}", time_display)
+        html = html.replace("{TIMESTAMP_UTC}", timestamp_utc)
+        html = html.replace("{TIMESTAMP_LOCAL}", timestamp_local)
         html = html.replace("{LAT}", str(lat))
         html = html.replace("{LON}", str(lon))
+        html = html.replace("{ALTITUDE}", str(altitude))
+        html = html.replace("{HEIGHT}", str(height))
 
         response = STATUS_OK_HTML
         response += html
@@ -170,15 +185,25 @@ async def handle_request_status(request, template_data):
 
 # region SHARED_ROUTES
 def handle_request_shared(request, template_data):
-    verb, path = _get_verb_path(request)
     ip = template_data["ip"]
+    
+    verb, path = _get_verb_path(request)
 
+    # GET /css/styles.css
     if (path == "/css/styles.css"):
         with open("static/css/styles.css", "r") as f:
             css = f.read()
         
         response = STATUS_OK_CSS
         response += css
+        return response, False
+    
+    # GET /fonts/space-wham.ttf
+    if (path == "/fonts/space-wham.ttf"):
+        with open("static/fonts/space-wham.ttf", "rb") as f:
+            ttf = f.read()
+        
+        response = STATUS_OK_TTF.encode() + ttf
         return response, False
 
     # GET /config
@@ -189,7 +214,9 @@ def handle_request_shared(request, template_data):
         html = html.replace("{BODY_CLASS}", "state-default")
 
         # Sync current settings to HTML form
-        f24hr, tz, dst = settings_read()
+        clock = Clock.get_instance()
+        f24hr, tz, dst = clock.get_locale()
+        
         html = html.replace(f'id="chkFormat"', f'id="chkFormat"{" checked" if f24hr else ""}')
         html = html.replace(f'option value="{tz}"', f'option value="{tz}" selected')
         html = html.replace(f'option value="{dst}"', f'option value="{dst}" selected')
@@ -237,7 +264,7 @@ def handle_request_shared(request, template_data):
 
             # Update clock without reboot
             clock = Clock.get_instance()
-            clock.init_localtime(f24hr, tz, dst)
+            clock.set_locale(f24hr, tz, dst)
 
             # Return HTML
             with open("static/config.html", "r") as f:
@@ -290,19 +317,48 @@ def handle_request_shared(request, template_data):
 
 # region HELPERS
 
+# Read complete HTTP request including body when Content-Length is present
+async def _read_http_request(reader):
+    request = await reader.read(1024)
+
+    header_end = request.find(b"\r\n\r\n")
+    if (header_end == -1):
+        return request
+
+    header_bytes = request[:header_end]
+    body = request[header_end + 4:]
+
+    content_length = 0
+    for line in header_bytes.split(b"\r\n"):
+        if (line.lower().startswith(b"content-length:")):
+            try:
+                content_length = int(line.split(b":", 1)[1].strip())
+            except Exception:
+                content_length = 0
+            break
+
+    # Some clients (including iOS Safari) may send headers and body in separate chunks.
+    while (len(body) < content_length):
+        chunk = await reader.read(content_length - len(body))
+        if (not chunk):
+            break
+        body += chunk
+
+    return header_bytes + b"\r\n\r\n" + body
+
 # Get path from request
 def _get_verb_path(request):
     request_str = request.decode("utf-8")
-    headers = request_str.split("\n")
+    headers = request_str.splitlines()
     verb_path = headers[0].split(" ")
     return verb_path[0].upper(), verb_path[1]
 
 # Get body from request
 def _get_body(request):
-    requestStr = request.decode("utf-8")
-    headers = requestStr.split("\n")
-    body = headers[-1]
-    return body
+    request_str = request.decode("utf-8")
+    if ("\r\n\r\n" in request_str):
+        return request_str.split("\r\n\r\n", 1)[1]
+    return ""
 
 # Get param value from query string or body
 def _get_param(str, param):

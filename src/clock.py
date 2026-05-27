@@ -28,22 +28,11 @@ class Clock:
 
         self._ds = None
     
-    # region DST
-    def init_localtime(self, format_24hr = None, tz = None, dst = None):
-        if (format_24hr == None):
-            self.format_24hr = Clock.DEFAULT_FORMAT_24HR
-        else:
-            self.format_24hr = format_24hr
-        
-        if (tz == None):
-            self.tz = Clock.DEFAULT_TZ
-        else:
-            self.tz = tz
-
-        if (dst == None):
-            self.dst = Clock.DEFAULT_DST
-        else:
-            self.dst = dst
+    # region LOCALE
+    def set_locale(self, format_24hr = None, tz = None, dst = None):
+        self.format_24hr = format_24hr if format_24hr != None else Clock.DEFAULT_FORMAT_24HR
+        self.tz = tz if tz != None else Clock.DEFAULT_TZ
+        self.dst = dst if dst != None else Clock.DEFAULT_DST
         
         print("init_local", json.dumps({
             "format_24hr": format_24hr,
@@ -120,37 +109,20 @@ class Clock:
         
         else:
             self._ds = None
-    # endregion
     
-    # region DATETIME
-    # GET datetime UTC tuple where subseconds = microseconds
-    # dt = (year, month, day, weekday, hours, minutes, seconds, subseconds)
-    def get_datetime(self):
-        if (self.last_time_set == 0):
-            return (1970, 1, 1, 4, 0, 0, 0, 0)
-
-        seconds, microseconds = self.time_seconds()
-
-        year, month, mday, hour, minute, second, weekday, yearday = time.gmtime(seconds)
-        return (year, month, mday, weekday, hour, minute, second, microseconds)
-
-    # SET datetime UTC where subseconds = microseconds
-    # dt = (year, month, day, weekday, hours, minutes, seconds, subseconds)
-    def set_datetime(self, dt, pps_delta_us = 0):
-        # Convert datetime tuple to seconds since epoch (UNIX: January 1, 1970)
-        seconds = time.mktime((dt[0], dt[1], dt[2], dt[4], dt[5], dt[6], dt[3], 0))
-
-        # Assume the subseconds in tuple is in Microseconds
-        self.time_us = seconds * 1000000 + dt[7] - pps_delta_us
-        self.last_time_set = time.ticks_us()
-    # endregion
+    def get_locale(self):
+        return (
+            self.format_24hr if self.format_24hr != None else Clock.DEFAULT_FORMAT_24HR,
+            self.tz if self.tz != None else Clock.DEFAULT_TZ,
+            self.dst if self.dst != None else Clock.DEFAULT_DST
+        )
 
     # dt = (year, month, day, weekday, hours, minutes, seconds, subseconds)
-    def localtime(self):
+    def get_localtime(self):
         if (self.last_time_set == 0):
             return (1970, 1, 1, 4, 0, 0, 0, 0)
         
-        seconds, microseconds = self.time_seconds()
+        seconds, microseconds = self.get_seconds()
         
         if (self._ds != None):
             # Adjust seconds for timezone and daylight saving time
@@ -160,8 +132,40 @@ class Clock:
         year, month, mday, hour, minute, second, weekday, yearday = time.gmtime(seconds)
         return (year, month, mday, weekday, hour, minute, second, microseconds)
 
+    def get_timestamp_local(self):
+        dt = self.get_localtime()
+        return self._format_timestamp(dt[0], dt[1], dt[2], dt[4], dt[5], dt[6], dt[7])
+    # endregion
+    
+    # region DATETIME
+    # SET datetime UTC where subseconds = microseconds
+    # dt = (year, month, day, weekday, hours, minutes, seconds, subseconds)
+    def set_datetime(self, dt, pps_delta_us = 0):
+        # Convert datetime tuple to seconds since epoch (UNIX: January 1, 1970)
+        seconds = time.mktime((dt[0], dt[1], dt[2], dt[4], dt[5], dt[6], dt[3], 0))
+
+        # Assume the subseconds in tuple is in Microseconds
+        self.time_us = seconds * 1000000 + dt[7] - pps_delta_us
+        self.last_time_set = time.ticks_us()
+
+    # GET datetime UTC tuple where subseconds = microseconds
+    # dt = (year, month, day, weekday, hours, minutes, seconds, subseconds)
+    def get_datetime(self):
+        if (self.last_time_set == 0):
+            return (1970, 1, 1, 4, 0, 0, 0, 0)
+
+        seconds, microseconds = self.get_seconds()
+
+        year, month, mday, hour, minute, second, weekday, yearday = time.gmtime(seconds)
+        return (year, month, mday, weekday, hour, minute, second, microseconds)
+
+    def get_timestamp(self):
+        dt = self.get_datetime()
+        return self._format_timestamp(dt[0], dt[1], dt[2], dt[4], dt[5], dt[6], dt[7])
+    # endregion
+
     # GET time in seconds since epoch (UNIX: January 1, 1970)
-    def time_seconds(self):
+    def get_seconds(self):
         if (self.last_time_set == 0):
             return 0, 0
 
@@ -171,11 +175,11 @@ class Clock:
         return int(now // 1000000), int(now % 1000000)
     
     # What to show on the display
-    def time_display(self, digits = 4):
+    def get_display(self, digits = 4):
         if (self.last_time_set == 0):
             return "------" if digits == 6 else "----"
 
-        now = self.localtime()
+        now = self.get_localtime()
         hours = now[4]
         minutes = now[5]
         seconds = now[6]
@@ -191,3 +195,15 @@ class Clock:
         
         return f'{hours_str}{minutes_str}{seconds_str}' if digits == 6 else f'{hours_str}{minutes_str}'
     # endregion
+
+    def _format_timestamp(self, year, month, day, hours, minutes, seconds, microseconds):
+        # Pad with leading zero if needed
+        year = "{:02d}".format(year)
+        month = "{:02d}".format(month)
+        day = "{:02d}".format(day)
+        hours = "{:02d}".format(hours)
+        minutes = "{:02d}".format(minutes)
+        seconds = "{:02d}".format(seconds)
+        microseconds = "{:06d}".format(microseconds)
+
+        return f"{year}-{month}-{day} {hours}:{minutes}:{seconds}.{microseconds}"
