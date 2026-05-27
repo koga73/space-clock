@@ -74,12 +74,17 @@ class GPS():
     def get_timestamp(self):
         return self.gps.Timestamp
 
-    def get_coords(self):
-        gps = self.gps
-        return gps.Lat, gps.Lon
-
     def get_lat(self):
         return self.gps.Lat
 
     def get_lon(self):
         return self.gps.Lon
+    
+    def get_altitude(self):
+        return self.gps.Altitude
+
+    def get_height(self):
+        return self.gps.Height
+
+    def has_fix(self):
+        return self.gps.Satellites > 0

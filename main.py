@@ -28,8 +28,6 @@ clock = Clock.get_instance()
 button = Button(20)
 display = Display(Pin(5), Pin(4), Pin("LED", Pin.OUT))
 gps = GPS(16)
-
-last_status_time = 0
 # endregion
 
 # region MODE_DEFAULT
@@ -39,7 +37,7 @@ async def mode_default():
     # See if we have settings saved
     print("\nsettings")
     f24hr, tz, dst = settings_read()
-    clock.init_localtime(f24hr, tz, dst)
+    clock.set_locale(f24hr, tz, dst)
     
     # See if we should connect to wifi
     server = None
@@ -68,7 +66,7 @@ async def mode_default():
         )
         
         # Start the ntp server
-        transport = await ntp_server(clock.time_seconds)
+        transport = await ntp_server(clock.get_seconds)
 
         # Show IP address on display once
         await display.show_async(ip.replace(".", "_"), loops = 1)
@@ -83,23 +81,22 @@ async def mode_default():
         transport.close()
 
 def _handle_request(request, ip):
-    satellites = gps.get_satellites()
-    timestamp = gps.get_timestamp()
-    lat, lon = gps.get_coords()
-
     return handle_request_status(request, {
-        "satellites": satellites,
-        "timestamp": timestamp,
-        "lat": lat,
-        "lon": lon,
         "ip": ip,
-        "time_display": clock.time_display()
+        "satellites": gps.get_satellites(),
+        "time_display": clock.get_display(),
+        "timestamp_utc": clock.get_timestamp(),
+        "timestamp_local": clock.get_timestamp_local(),
+        "lat": gps.get_lat(),
+        "lon": gps.get_lon(),
+        "altitude": gps.get_altitude(),
+        "height": gps.get_height()
     })
 #endregion
 
 # region LOOP_DEFAULT
 async def _loop_default():
-    global last_status_time
+    last_status_time = 0
     
     print("\nloop default")
     display.show("^^^^----____----^^^^")
@@ -110,10 +107,25 @@ async def _loop_default():
         # If our check button function returns true, break
         if (button.loop_button(now_ms, button.default_released, button.default_held)):
             break
-        
+            
         # Try to receive GPS data on PPS signal
         did_update = gps.try_receive()
+        satellites = gps.get_satellites()
+        
+        # Periodic status update
+        colon = True
+        if (time.ticks_diff(now_ms, last_status_time) > STATUS_DELAY):
+            last_status_time = now_ms
+            colon = False
 
+            print("\ngps status")
+            if (gps.has_fix()):
+                print(f"time = {gps.get_timestamp()}")
+                print(f"lat = {gps.get_lat()}, lon = {gps.get_lon()}")
+                print(f"satellites = {satellites}")
+            else:
+                print("searching for satellites...")
+        
         # If we have a new GPS timestamp, update the clock and display
         if (did_update):
             # Update Clock with GPS time on PPS signal
@@ -122,17 +134,6 @@ async def _loop_default():
             clock.set_datetime(datetime, gps.get_pps_delta())
             # Update RTC but it is not as accurate
             rtc.datetime(datetime)
-
-            # Periodic update
-            colon = True
-            if (time.ticks_diff(now_ms, last_status_time) > STATUS_DELAY):
-                last_status_time = now_ms
-                colon = False
-
-                print("\ngps status")
-                print(f"time = {datetime}")
-                print(f"lat = {gps.get_lat()}, lon = {gps.get_lon()}")
-                print(f"satellites = {gps.get_satellites()}")
 
             # Display
             _display_current_time(colon)
@@ -146,7 +147,7 @@ def _display_current_time(colon = True):
     if (clock.last_time_set == 0):
         return
 
-    display.show(clock.time_display(), colon = colon)
+    display.show(clock.get_display(), colon = colon)
 # endregion
 
 # region MODE_AP

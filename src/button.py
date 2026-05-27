@@ -33,14 +33,15 @@ class Button(object):
     # region DEFAULT
     def default_released(self, held_time):
         print(f"\nbutton released after {held_time} ms")
-
-        # Toggle 24hr format
-        f24hr, tz, dst = settings_read()
-        f24hr = not f24hr
-        settings_write(f24hr, tz, dst)
         
         clock = Clock.get_instance()
-        clock.init_localtime(f24hr, tz, dst)
+        f24hr, tz, dst = clock.get_locale()
+        
+        # Toggle 24hr format
+        f24hr = not f24hr
+
+        clock.set_locale(f24hr, tz, dst)
+        settings_write(f24hr, tz, dst)
 
     def default_held(self, held_time):
         print(f"\nbutton held for {held_time} ms")

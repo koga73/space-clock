@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>SPACE CLOCK</title>
+		<title>STATUS | SPACE CLOCK</title>
 		
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width,initial-scale=1" />
+
+		<meta http-equiv="refresh" content="60" />
 
 		<link rel="stylesheet" href="/css/styles.css" />
 	</head>
@@ -15,9 +17,13 @@
 			<span>STATUS</span>
 		</h1>
 
+		<section id="display">
+			<h2>Display</h2>
+			<time datetime="{TIMESTAMP_LOCAL}">{TIME_DISPLAY}</time>
+		</section>
 		<section id="time">
 			<h2>Time</h2>
-			<time datetime="{TIMESTAMP}">{TIME_DISPLAY}</time>
+			<time id="realtime">--:--:--</time>
 		</section>
 
 		<section id="status">
@@ -26,16 +32,48 @@
 				<dt>Satellites</dt>
 				<dd>{SATELLITES}</dd>
 	
-				<dt>Time</dt>
-				<dd>{TIMESTAMP}</dd>
+				<dt>Time UTC</dt>
+				<dd>{TIMESTAMP_UTC}</dd>
+				<dt>Time Local</dt>
+				<dd>{TIMESTAMP_LOCAL}</dd>
 	
 				<dt>Latitude</dt>
 				<dd>{LAT}</dd>
 				<dt>Longitude</dt>
 				<dd>{LON}</dd>
+				<dt>Altitude</dt>
+				<dd>{ALTITUDE}</dd>
+				<dt>Height</dt>
+				<dd>{HEIGHT}</dd>
 			</dl>
 		</section>
+		
+		<section id="options">
+			<h2>Options</h2>
+			<ul>
+				<li>
+					<a class="btn" href="/config">Config</a>
+				</li>
+			</ul>
+		</section>
 
-		<a class="btn btn-secondary" href="/config">Configuration</a>
+		<script type="text/javascript">
+			const localTime = new Date("{TIMESTAMP_LOCAL}");
+			const startTime = new Date().getTime();
+			
+			const realtime = document.getElementById("realtime");
+
+			// Tick the clock every second
+			setInterval(() => {
+				if (localTime.getFullYear() === 1970) {
+					return;
+				}
+				delta = new Date() - startTime;
+				currentTime = new Date(localTime.getTime() + delta);
+
+				realtime.textContent = currentTime.toLocaleTimeString();
+				realtime.setAttribute("datetime", currentTime.toISOString());
+			}, 1000);
+		</script>
 	</body>
 </html>

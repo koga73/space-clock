@@ -5,11 +5,30 @@
         "reportMissingModuleSource": "none"
     },
     "python.terminal.activateEnvironment": false,
-    "micropico.openOnStart": true,
     "python.analysis.typeshedPaths": [
         "~/.micropico-stubs/included"
     ],
     "python.analysis.extraPaths": [
         "~/.micropico-stubs/included"
+    ],
+    "micropico.openOnStart": true,
+    "micropico.syncFolder": "",
+    "micropico.syncAllFileTypes": false,
+    "micropico.syncFileTypes": [
+        "py",
+        "html",
+        "css",
+        "js",
+        "ttf"
+    ],
+    "micropico.pyIgnore": [
+        "_artifacts",
+        ".git",
+        ".github",
+        ".vscode",
+        "README.md",
+        "LICENSE",
+        "**/__pycache__",
+        "**/.DS_Store"
     ]
 }
