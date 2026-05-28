@@ -13,7 +13,7 @@ class GPS():
     def __init__(self, pps_pin = 16):
         self._pps_pin = pps_pin
 
-        self._pps_last_tick = time.ticks_us()
+        self._pps_last_tick = 0
         self._pps_ticks_per_second = 1000000
 
     async def init(self):
@@ -45,9 +45,12 @@ class GPS():
     
     # Process the PPS tick and compute the ticks-per-second
     def _pps_process(self, pps_tick):
-        # Compute number of ticks in a second
-        delta = self._pps_ticks_per_second = time.ticks_diff(pps_tick, self._pps_last_tick)
-        self._pps_ticks_per_second = int(_JITTER_SMOOTHING_FACTOR * delta + (1 - _JITTER_SMOOTHING_FACTOR) * self._pps_ticks_per_second)
+        delta = time.ticks_diff(pps_tick, self._pps_last_tick)
+        
+        # Ignore if the delta is too far off
+        if (900000 < delta < 1100000):
+            self._pps_ticks_per_second = int(_JITTER_SMOOTHING_FACTOR * delta + (1 - _JITTER_SMOOTHING_FACTOR) * self._pps_ticks_per_second)
+        
         self._pps_last_tick = pps_tick
     
     # Call from main loop
