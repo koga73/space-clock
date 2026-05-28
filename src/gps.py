@@ -1,3 +1,4 @@
+import micropython
 import asyncio
 import time
 from machine import Pin
@@ -38,15 +39,16 @@ class GPS():
         pps = Pin(self._pps_pin, Pin.IN)
         pps.irq(trigger = Pin.IRQ_RISING, handler = self._handle_pps)
 
-    # PPS signal IRQ handler
+    # PPS signal IRQ handler, capture the tick and schedule processing outside of the interrupt
     def _handle_pps(self, _pin):
-        now = time.ticks_us()
-        
+        micropython.schedule(self._pps_process, time.ticks_us())
+    
+    # Process the PPS tick and compute the ticks-per-second
+    def _pps_process(self, pps_tick):
         # Compute number of ticks in a second
-        delta = self._pps_ticks_per_second = time.ticks_diff(now, self._pps_last_tick)
+        delta = self._pps_ticks_per_second = time.ticks_diff(pps_tick, self._pps_last_tick)
         self._pps_ticks_per_second = int(_JITTER_SMOOTHING_FACTOR * delta + (1 - _JITTER_SMOOTHING_FACTOR) * self._pps_ticks_per_second)
-        
-        self._pps_last_tick = now
+        self._pps_last_tick = pps_tick
     
     # Call from main loop
     def loop(self):

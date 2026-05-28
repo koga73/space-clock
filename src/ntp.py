@@ -39,7 +39,7 @@ async def start_udp(protocol, host, port, time_func):
 
 async def _udp_loop(protocol, transport, time_func):
     while True:
-        await asyncio.sleep_ms(10)
+        await asyncio.sleep_ms(1)
         
         try:
             data, addr = transport.recvfrom(48)
