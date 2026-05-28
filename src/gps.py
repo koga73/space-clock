@@ -4,13 +4,16 @@ from machine import Pin
 
 from lib.l76x import L76X
 
+# New ticks-per-second gets multiplied by this factor to smooth out into an averaged jitter 
+_JITTER_SMOOTHING_FACTOR = 0.1
+
 class GPS():
     # Constructor
     def __init__(self, pps_pin = 16):
-        self.pps_pin = pps_pin
+        self._pps_pin = pps_pin
 
-        self._pps_ready = False
-        self._pps_tick = time.ticks_us()
+        self._pps_last_tick = time.ticks_us()
+        self._pps_ticks_per_second = 1000000
 
     async def init(self):
         gps = L76X()
@@ -32,31 +35,26 @@ class GPS():
 
         self.gps = gps
 
-        pps = Pin(self.pps_pin, Pin.IN)
+        pps = Pin(self._pps_pin, Pin.IN)
         pps.irq(trigger = Pin.IRQ_RISING, handler = self._handle_pps)
 
     # PPS signal IRQ handler
     def _handle_pps(self, _pin):
-        self._pps_tick = time.ticks_us()
+        now = time.ticks_us()
         
-        # If we are already true then the last message was not processed - so clear the buffer
-        if (self._pps_ready == True):
-            self.gps.L76X_Flush()
+        # Compute number of ticks in a second
+        delta = self._pps_ticks_per_second = time.ticks_diff(now, self._pps_last_tick)
+        self._pps_ticks_per_second = int(_JITTER_SMOOTHING_FACTOR * delta + (1 - _JITTER_SMOOTHING_FACTOR) * self._pps_ticks_per_second)
         
-        self._pps_ready = True
+        self._pps_last_tick = now
     
     # Call from main loop
-    def try_receive(self):
-        did_update = self.gps.L76X_Receive()
+    def loop(self):
+        return self.gps.L76X_Receive()
 
-        if (self._pps_ready and did_update):
-            self._pps_ready = False
-            return True
-        
-        return False
-
-    def get_pps_delta(self):
-        return time.ticks_diff(self.gps.Last_Updated, self._pps_tick)
+    # Return tuple of (last_pps_tick, ticks_per_second)
+    def get_pps(self):
+        return self._pps_last_tick, self._pps_ticks_per_second
 
     def get_satellites(self):
         return self.gps.Satellites
@@ -68,7 +66,7 @@ class GPS():
             gps.Time_Year, gps.Time_Month, gps.Time_Day,
             weekday,
             gps.Time_Hours, gps.Time_Minutes, gps.Time_Seconds,
-            0 # gps.Time_Microseconds
+            gps.Time_Microseconds
         )
 
     def get_timestamp(self):

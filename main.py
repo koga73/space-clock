@@ -109,7 +109,7 @@ async def _loop_default():
             break
             
         # Try to receive GPS data on PPS signal
-        did_update = gps.try_receive()
+        did_update = gps.loop()
         satellites = gps.get_satellites()
         
         # Periodic status update
@@ -131,7 +131,7 @@ async def _loop_default():
             # Update Clock with GPS time on PPS signal
             datetime = gps.get_datetime()
             # Update our custom clock
-            clock.set_datetime(datetime, gps.get_pps_delta())
+            clock.set_datetime(datetime, gps.get_pps())
             # Update RTC but it is not as accurate
             rtc.datetime(datetime)
 
@@ -144,7 +144,7 @@ async def _loop_default():
 
 # region DISPLAY
 def _display_current_time(colon = True):
-    if (clock.last_time_set == 0):
+    if (clock._time_us == 0):
         return
 
     display.show(clock.get_display(), colon = colon)

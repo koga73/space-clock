@@ -7,6 +7,8 @@ import time
 # NTP timestamp starts Jan 1, 1900. Unix epoch starts Jan 1, 1970
 # Difference is 2,208,988,800 seconds
 _EPOCH_OFFSET = 2208988800
+# Precise 32-bit fractional conversion scale (2^32 / 1,000,000 = 4294.967296)
+_FRACTIONAL_SCALE = 4294.967296
 
 _PRECISION_MILLISECOND = -10 # 2 ^ -10 = ~1 millisecond: Standard precision for a microcontroller
 _PRECISION_MICROSECOND = -20 # 2 ^ -20 = ~1 microsecond
@@ -70,9 +72,9 @@ class NtpProtocol():
         client_vn = (data[0] >> 3) & 0x7
 
         # T2: Receive timestamp — captured at recvfrom, before any processing delay
-        recv_sec, recv_frac = time_func()
+        recv_sec, recv_frac = recv_time
         recv_ntp_sec = recv_sec + _EPOCH_OFFSET
-        recv_ntp_frac = recv_frac * 4295
+        recv_ntp_frac = int(recv_frac * _FRACTIONAL_SCALE)
 
         # Construct NTP Response Packet (48 bytes)
         response = bytearray(48)
@@ -98,7 +100,7 @@ class NtpProtocol():
         # T3: Transmit timestamp — captured just before sending to exclude server processing time
         xmit_sec, xmit_frac = time_func()
         xmit_ntp_sec = xmit_sec + _EPOCH_OFFSET
-        xmit_ntp_frac = xmit_frac * 4295
+        xmit_ntp_frac = int(xmit_frac * _FRACTIONAL_SCALE)
 
         # Transmit Timestamp (T3: when packet leaves server)
         response[40:44] = ustruct.pack("!I", xmit_ntp_sec)

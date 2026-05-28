@@ -23,13 +23,17 @@ class Clock:
         if (enforcer != _SINGLETON_ENFORCER):
             raise RuntimeError("Cannot create instance, use singleton instead")
 
-        self.time_us = 0
-        self.last_time_set = 0
-
+        # Locale settings
         self.format_24hr = Clock.DEFAULT_FORMAT_24HR
         self.tz = Clock.DEFAULT_TZ
         self.dst = Clock.DEFAULT_DST
+        
+        # Timekeeping in microseconds
+        self._time_us = 0
+        self._pps_last_tick = 0
+        self._pps_ticks_per_second = 1000000
 
+        # Daylight saving time policy
         self._ds = None
     
     # region LOCALE
@@ -122,7 +126,7 @@ class Clock:
 
     # dt = (year, month, day, weekday, hours, minutes, seconds, subseconds)
     def get_localtime(self):
-        if (self.last_time_set == 0):
+        if (self._time_us == 0):
             return (1970, 1, 1, 4, 0, 0, 0, 0)
         
         seconds, microseconds = self.get_seconds()
@@ -146,18 +150,20 @@ class Clock:
     # region DATETIME
     # SET datetime UTC where subseconds = microseconds
     # dt = (year, month, day, weekday, hours, minutes, seconds, subseconds)
-    def set_datetime(self, dt, pps_delta_us = 0):
+    # pps = (last_pps_tick, ticks_per_second)
+    def set_datetime(self, dt, pps):
         # Convert datetime tuple to seconds since epoch (UNIX: January 1, 1970)
         seconds = time.mktime((dt[0], dt[1], dt[2], dt[4], dt[5], dt[6], dt[3], 0))
 
         # Assume the subseconds in tuple is in Microseconds
-        self.time_us = seconds * 1000000 + dt[7] - pps_delta_us
-        self.last_time_set = time.ticks_us()
+        self._time_us = seconds * 1000000 + dt[7]
+        self._pps_last_tick = pps[0]
+        self._pps_ticks_per_second = pps[1]
 
     # GET datetime UTC tuple where subseconds = microseconds
     # dt = (year, month, day, weekday, hours, minutes, seconds, subseconds)
     def get_datetime(self):
-        if (self.last_time_set == 0):
+        if (self._time_us == 0):
             return (1970, 1, 1, 4, 0, 0, 0, 0)
 
         seconds, microseconds = self.get_seconds()
@@ -172,17 +178,17 @@ class Clock:
 
     # GET time in seconds since epoch (UNIX: January 1, 1970)
     def get_seconds(self):
-        if (self.last_time_set == 0):
+        if (self._time_us == 0):
             return 0, 0
 
-        t = self.time_us
-        delta = time.ticks_diff(time.ticks_us(), self.last_time_set)
-        now = t + delta
+        t = self._time_us
+        delta = time.ticks_diff(time.ticks_us(), self._pps_last_tick)
+        now = t + (delta * 1000000) // self._pps_ticks_per_second
         return int(now // 1000000), int(now % 1000000)
     
     # What to show on the display
     def get_display(self, digits = 4):
-        if (self.last_time_set == 0):
+        if (self._time_us == 0):
             return "------" if digits == 6 else "----"
 
         now = self.get_localtime()
