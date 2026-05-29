@@ -5,6 +5,7 @@ INTRODUCING THE
 ALWAYS RIGHT. AUTOMAGICALLY.
 
 ![SPACE CLOCK graphic](_artifacts/graphics/space-clock.png)
+![SPACE CLOCK photo](_artifacts/photos/space-clock_01.jpg)
 
 ## What is the SPACE CLOCK ?
 
