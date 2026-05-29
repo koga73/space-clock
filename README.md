@@ -5,11 +5,12 @@ INTRODUCING THE
 ALWAYS RIGHT. AUTOMAGICALLY.
 
 ![SPACE CLOCK graphic](_artifacts/graphics/space-clock.png)
-![SPACE CLOCK photo](_artifacts/photos/space-clock_01.jpg)
 
 ## What is the SPACE CLOCK ?
 
 The SPACE CLOCK sets itself using GPS signals to achieve microsecond accuracy of up to one millionth of a second. Not only is the SPACE CLOCK a physical clock, but it also acts as an __NTP__ server (network time server) allowing you to sync precise time across all of your network devices.
+
+![SPACE CLOCK photo](_artifacts/photos/space-clock_01.jpg)
 
 ## Features
 
@@ -21,6 +22,8 @@ The SPACE CLOCK sets itself using GPS signals to achieve microsecond accuracy of
 - Open-source firmware, schematics, and space-age 3D printable case
 
 ### Bill of Materials
+
+![SPACE CLOCK bill of materials](_artifacts/photos/space-clock_02.jpg)
 
 - [Raspberry Pi Pico 2 W](https://www.raspberrypi.com/products/raspberry-pi-pico-2/)
 - [Waveshare L76K GPS module](https://www.waveshare.com/pico-gps-l76k.htm)
@@ -203,6 +206,8 @@ One leg of the button should go to GND `Pin 13` / `Pin 28` and the other leg sho
 
 ### 3D printed case
 
+![SPACE CLOCK 3d printed case](_artifacts/photos/space-clock_03.jpg)
+
 The case consists of three parts, the display mount, the bottom plate and the top cover.
 
 - Print in PLA with or without infill.
@@ -218,11 +223,15 @@ If you do not want an external GPS antenna you can place a small ceramic GPS ant
 
 ### Assembly
 
+![SPACE CLOCK inner back](_artifacts/photos/space-clock_05.jpg)
+
 Solder connections on the mini solderable breadboard as specified. Connect the USB-C breakout board and Display as specified. Plug the Waveshare L76K into the solderable breadboard female headers and then the Pico into the Waveshare female headers
 
 ### Post your build!
 
 If you make your own I would love to see it, post as a make or remix!
+
+![SPACE CLOCK inner front](_artifacts/photos/space-clock_04.jpg)
 
 ## Future plans
 
