@@ -1,6 +1,7 @@
 import time
 import asyncio
 import machine
+import network
 from machine import Pin, RTC
 
 from src.clock import Clock
@@ -15,6 +16,7 @@ from src.filesystem import boot_read, wifi_read, settings_read
 AP_SSID = "space_clock"
 AP_PASS = None
 
+WIFI_HOSTNAME = "space-clock"
 DEFAULT_WIFI = {
     "ssid": None,
     "password": None
@@ -205,6 +207,7 @@ async def main():
 
     # Reset wlan interfaces
     await wlan_reset()
+    network.hostname(WIFI_HOSTNAME)
 
     try:
         mode = boot_read()

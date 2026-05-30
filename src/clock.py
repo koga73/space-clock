@@ -7,6 +7,8 @@ _SINGLETON_ENFORCER = object()
 
 # Clock with microsecond precision, timezones and daylight saving time
 class Clock:
+    ERROR_NOT_SET = "time not set"
+
     DEFAULT_FORMAT_24HR = False
     DEFAULT_TZ = -5	# EST
     DEFAULT_DST = "us"
@@ -179,7 +181,7 @@ class Clock:
     # GET time in seconds since epoch (UNIX: January 1, 1970)
     def get_seconds(self):
         if (self._time_us == 0):
-            return 0, 0
+            raise ValueError(Clock.ERROR_NOT_SET)
 
         t = self._time_us
         delta = time.ticks_diff(time.ticks_us(), self._pps_last_tick)

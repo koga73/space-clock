@@ -46,6 +46,9 @@ async def _udp_loop(protocol, transport, time_func):
             recv_time = time_func()
             protocol.datagram_received(data, addr, recv_time, time_func)
         
+        except ValueError as e:
+            print("ntp error: " + str(e))
+        
         except OSError as e:
             # If transport is closed, break the loop
             if e.args[0] == errno.EBADF:

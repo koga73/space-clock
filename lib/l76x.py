@@ -110,6 +110,10 @@ class L76X(object):
     # Read from GPS UART, parse and update time
     def L76X_Receive(self):
         self.L76X_Flush()
+
+        # Ensure we have a satellite fix
+        if (self.parser.satellites_in_use == 0):
+            return False
         
         # Update time
         day, month, year = self.parser.date
