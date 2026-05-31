@@ -76,6 +76,7 @@ async def wlan_connect(ssid, password):
     print("\nwlan_connect")
 
     wlan = network.WLAN(network.STA_IF)
+    wlan.config(pm=0xa11140) # Disable low power mode to improve stability
     wlan.active(True)
     await _wait_for_active(wlan)
     wlan.connect(ssid, password)

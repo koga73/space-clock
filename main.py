@@ -3,7 +3,7 @@ import asyncio
 import machine
 import network
 import _thread
-from machine import Pin, RTC
+from machine import Pin
 
 from src.filesystem import boot_read, wifi_read, settings_read
 from src.wifi import wlan_reset, wlan_scan, wlan_ap, wlan_connect
@@ -31,8 +31,6 @@ clock = Clock.get_instance()
 gps = GPS(16)
 display = Display(Pin(5), Pin(4), Pin("LED", Pin.OUT))
 button = Button(20)
-
-data_lock = _thread.allocate_lock()
 # endregion
 
 # region MODE_DEFAULT
@@ -42,8 +40,7 @@ async def mode_default():
     # See if we have settings saved
     print("\nsettings")
     f24hr, tz, dst = settings_read()
-    with data_lock:
-        clock.set_locale(f24hr, tz, dst)
+    clock.set_locale(f24hr, tz, dst)
     
     # See if we should connect to wifi
     print("\nwifi")
@@ -80,17 +77,14 @@ async def mode_default():
         server.close()
 
 def _handle_request(request, ip):
-    global data_lock
-
-    with data_lock:
-        satellites = gps.get_satellites()
-        time_display = clock.get_display()
-        timestamp_utc = clock.get_timestamp()
-        timestamp_local = clock.get_timestamp_local()
-        lat = gps.get_lat()
-        lon = gps.get_lon()
-        altitude = gps.get_altitude()
-        height = gps.get_height()
+    satellites = gps.get_satellites()
+    time_display = clock.get_display()
+    timestamp_utc = clock.get_timestamp()
+    timestamp_local = clock.get_timestamp_local()
+    lat = gps.get_lat()
+    lon = gps.get_lon()
+    altitude = gps.get_altitude()
+    height = gps.get_height()
     
     return handle_request_status(request, {
         "ip": ip,
@@ -107,8 +101,6 @@ def _handle_request(request, ip):
 
 # region LOOP_DEFAULT
 async def _loop_default():
-    global data_lock
-    
     print("\nloop default")
     display.show("^^^^----____----^^^^")
     
@@ -127,13 +119,12 @@ async def _loop_default():
             colon = False
 
             print("\ngps status")
-            with data_lock:
-                if (gps.has_fix()):
-                    print(f"time = {gps.get_timestamp()}")
-                    print(f"lat = {gps.get_lat()}, lon = {gps.get_lon()}")
-                    print(f"satellites = {gps.get_satellites()}")
-                else:
-                    print("searching for satellites...")
+            if (gps.has_fix()):
+                print(f"time = {gps.get_timestamp()}")
+                print(f"lat = {gps.get_lat()}, lon = {gps.get_lon()}")
+                print(f"satellites = {gps.get_satellites()}")
+            else:
+                print("searching for satellites...")
             
         # Display
         _display_current_time(colon)
@@ -144,12 +135,9 @@ async def _loop_default():
 
 # region DISPLAY
 def _display_current_time(colon = True):
-    global data_lock
-
-    with data_lock:
-        if (clock._time_us == 0):
-            return
-        text = clock.get_display()
+    if (clock._time_us == 0):
+        return
+    text = clock.get_display()
 
     display.show(text, colon = colon)
 # endregion
@@ -196,9 +184,6 @@ async def _loop_ap():
 
 # region GPS_NTP
 def _loop_gps():
-    global data_lock
-    
-    rtc = RTC()
     gps.init()
 
     # Start the ntp server
@@ -206,23 +191,20 @@ def _loop_gps():
     ntp.start()
     
     while True:
-        with data_lock:
-            # Process NTP requests
-            break_flag = ntp.udp_loop()
-            if (break_flag):
-                break
+        # Process NTP requests
+        break_flag = ntp.udp_loop()
+        if (break_flag):
+            break
 
-            # Try to receive GPS data on PPS signal
-            did_update = gps.loop()
-            
-            # If we have a new GPS timestamp, update the clock and display
-            if (did_update):
-                # Update Clock with GPS time on PPS signal
-                datetime = gps.get_datetime()
-                # Update our custom clock
-                clock.set_datetime(datetime, gps.get_pps())
-                # Update RTC but it is not as accurate
-                rtc.datetime(datetime)
+        # Try to receive GPS data on PPS signal
+        did_update = gps.loop()
+        
+        # If we have a new GPS timestamp, update the clock and display
+        if (did_update):
+            # Update Clock with GPS time on PPS signal
+            datetime = gps.get_datetime()
+            # Update our custom clock
+            clock.set_datetime(datetime, gps.get_pps())
     
     print("gps and ntp stopped")
     ntp.stop()

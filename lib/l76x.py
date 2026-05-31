@@ -9,8 +9,6 @@ import micropyGPS as Parser
 Temp = '0123456789ABCDEF*'
 
 class L76X(object):
-    Last_Updated = 0
-
     Time_Year = 0
     Time_Month = 0
     Time_Day = 0
@@ -125,11 +123,12 @@ class L76X(object):
         
         # print(seconds_raw)
 
-        s = str(seconds_raw).split(".")
-        seconds = int(s[0])
-        frac = s[1] if len(s) > 1 else "0"
-        microseconds = int((frac + "000000")[:6]) # .5 -> 500000, .05 -> 50000
-
+        seconds = int(seconds_raw)
+        microseconds = int(round((seconds_raw - seconds) * 1000000))
+        if microseconds >= 1000000:
+            microseconds = 0
+            seconds += 1
+        
         # Ensure has changed
         if (
             year + 2000, month, day,
@@ -141,7 +140,6 @@ class L76X(object):
             self.Time_Microseconds
         ): return False
         
-        self.Last_Updated = time.ticks_us()
         self.Time_Year = year + 2000 # GPS returns year as 2 digit format
         self.Time_Month = month
         self.Time_Day = day

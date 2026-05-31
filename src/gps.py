@@ -1,4 +1,4 @@
-import micropython
+import _thread
 import time
 from machine import Pin
 
@@ -10,6 +10,8 @@ _JITTER_SMOOTHING_FACTOR = 0.1
 class GPS():
     # Constructor
     def __init__(self, pps_pin = 16):
+        self._lock = _thread.allocate_lock()
+
         self._pps_pin = pps_pin
 
         self._pps_last_tick = 0
@@ -35,22 +37,21 @@ class GPS():
 
         self.gps = gps
 
+        # Soft IRQ so we can use locks in the handler
         pps = Pin(self._pps_pin, Pin.IN)
-        pps.irq(trigger = Pin.IRQ_RISING, handler = self._handle_pps)
+        pps.irq(trigger = Pin.IRQ_RISING, handler = self._handle_pps, hard = False)
 
-    # PPS signal IRQ handler, capture the tick and schedule processing outside of the interrupt
+    # PPS signal IRQ handler, capture the tick and compute the ticks-per-second
     def _handle_pps(self, _pin):
-        micropython.schedule(self._process_pps, time.ticks_us())
-    
-    # Process the PPS tick and compute the ticks-per-second
-    def _process_pps(self, pps_tick):
-        delta = time.ticks_diff(pps_tick, self._pps_last_tick)
-        
-        # Ignore if the delta is too far off
-        if (950000 < delta < 1050000):
-            self._pps_ticks_per_second = int(_JITTER_SMOOTHING_FACTOR * delta + (1 - _JITTER_SMOOTHING_FACTOR) * self._pps_ticks_per_second)
-        
-        self._pps_last_tick = pps_tick
+        pps_tick = time.ticks_us()
+
+        with self._lock:
+            delta = time.ticks_diff(pps_tick, self._pps_last_tick)
+            self._pps_last_tick = pps_tick
+            
+            # Ignore if the delta is too far off
+            if (950000 < delta < 1050000):
+                self._pps_ticks_per_second = int(_JITTER_SMOOTHING_FACTOR * delta + (1 - _JITTER_SMOOTHING_FACTOR) * self._pps_ticks_per_second)
     
     # Call from main loop
     def loop(self):
@@ -58,35 +59,48 @@ class GPS():
 
     # Return tuple of (last_pps_tick, ticks_per_second)
     def get_pps(self):
-        return self._pps_last_tick, self._pps_ticks_per_second
+        with self._lock:
+            return self._pps_last_tick, self._pps_ticks_per_second
 
     def get_satellites(self):
-        return self.gps.Satellites
+        with self._lock:
+            return self.gps.Satellites
 
     def get_datetime(self):
-        gps = self.gps
+        with self._lock:
+            gps = self.gps
+            year, month, day = gps.Time_Year, gps.Time_Month, gps.Time_Day
+            hours, minutes, seconds = gps.Time_Hours, gps.Time_Minutes, gps.Time_Seconds
+            microseconds = gps.Time_Microseconds
+        
         weekday = 0 # Not supported by GPS
         return (
-            gps.Time_Year, gps.Time_Month, gps.Time_Day,
+            year, month, day,
             weekday,
-            gps.Time_Hours, gps.Time_Minutes, gps.Time_Seconds,
-            gps.Time_Microseconds
+            hours, minutes, seconds,
+            microseconds
         )
 
     def get_timestamp(self):
-        return self.gps.Timestamp
+        with self._lock:
+            return self.gps.Timestamp
 
     def get_lat(self):
-        return self.gps.Lat
+        with self._lock:
+            return self.gps.Lat
 
     def get_lon(self):
-        return self.gps.Lon
+        with self._lock:
+            return self.gps.Lon
     
     def get_altitude(self):
-        return self.gps.Altitude
+        with self._lock:
+            return self.gps.Altitude
 
     def get_height(self):
-        return self.gps.Height
+        with self._lock:
+            return self.gps.Height
 
     def has_fix(self):
-        return self.gps.Satellites > 0
+        with self._lock:
+            return self.gps.Satellites > 0
