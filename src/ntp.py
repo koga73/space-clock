@@ -1,8 +1,6 @@
-import asyncio
 import socket
 import ustruct
 import errno
-import time
 
 # NTP timestamp starts Jan 1, 1900. Unix epoch starts Jan 1, 1970
 # Difference is 2,208,988,800 seconds
@@ -16,35 +14,49 @@ _PRECISION_MICROSECOND = -20 # 2 ^ -20 = ~1 microsecond
 POLL_INTERVAL = 6 # 2 ^ 6 = 64 seconds: Standard starting default interval for most Linux systems
 PRECISION = _PRECISION_MICROSECOND
 
-async def ntp_server(time_func = time.time):
-    print("\nntp_server")
+class NtpServer():
+    def __init__(self, time_func):
+        self.time_func = time_func
+        
+        self._server = None
+        self._transport = None
+        self._protocol = None
+    
+    def start(self):
+        self._server = self._udp_server(
+            NtpProtocol,
+            "0.0.0.0",
+            123
+        )
+    
+    def stop(self):
+        if (self._protocol):
+            self._protocol = None
+        
+        if (self._transport):
+            self._transport.close()
+            self._transport = None
 
-    transport = await start_udp(
-        NtpProtocol,
-        "0.0.0.0",
-        123,
-        time_func
-    )
-    return transport
+        if (self._server):
+            self._server.close()
+            self._server = None
 
-async def start_udp(protocol, host, port, time_func):
-    transport = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    transport.bind((host, port))
-    transport.setblocking(False)
-    p = protocol(transport)
+    def _udp_server(self, protocol, host, port):
+        transport = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        transport.bind((host, port))
+        transport.setblocking(False)
+        
+        self._transport = transport
+        self._protocol = protocol(transport)
 
-    asyncio.create_task(_udp_loop(p, transport, time_func))
-
-    return transport
-
-async def _udp_loop(protocol, transport, time_func):
-    while True:
-        await asyncio.sleep_ms(1)
+    def udp_loop(self):
+        if (not self._transport or not self._protocol):
+            raise ValueError("ntp server not started")
         
         try:
-            data, addr = transport.recvfrom(48)
-            recv_time = time_func()
-            protocol.datagram_received(data, addr, recv_time, time_func)
+            data, addr = self._transport.recvfrom(48)
+            recv_time = self.time_func()
+            self._protocol.datagram_received(data, addr, recv_time, self.time_func)
         
         except ValueError as e:
             print("ntp error: " + str(e))
@@ -52,7 +64,9 @@ async def _udp_loop(protocol, transport, time_func):
         except OSError as e:
             # If transport is closed, break the loop
             if e.args[0] == errno.EBADF:
-                break
+                return True
+        
+        return False
 
 class NtpProtocol():
     def __init__(self, transport):

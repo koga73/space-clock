@@ -1,5 +1,4 @@
 import micropython
-import asyncio
 import time
 from machine import Pin
 
@@ -16,14 +15,14 @@ class GPS():
         self._pps_last_tick = 0
         self._pps_ticks_per_second = 1000000
 
-    async def init(self):
+    def init(self):
         gps = L76X()
         gps.L76X_Set_Baudrate(9600)
-        await asyncio.sleep_ms(1000)
+        time.sleep_ms(1000)
 
         # Increase BAUD rate for faster NMEA parsing
         gps.L76X_Send_Command(gps.SET_NMEA_BAUDRATE_115200)
-        await asyncio.sleep_ms(1000)
+        time.sleep_ms(1000)
         gps.L76X_Set_Baudrate(115200)
 
         # Timing
@@ -41,14 +40,14 @@ class GPS():
 
     # PPS signal IRQ handler, capture the tick and schedule processing outside of the interrupt
     def _handle_pps(self, _pin):
-        micropython.schedule(self._pps_process, time.ticks_us())
+        micropython.schedule(self._process_pps, time.ticks_us())
     
     # Process the PPS tick and compute the ticks-per-second
-    def _pps_process(self, pps_tick):
+    def _process_pps(self, pps_tick):
         delta = time.ticks_diff(pps_tick, self._pps_last_tick)
         
         # Ignore if the delta is too far off
-        if (900000 < delta < 1100000):
+        if (950000 < delta < 1050000):
             self._pps_ticks_per_second = int(_JITTER_SMOOTHING_FACTOR * delta + (1 - _JITTER_SMOOTHING_FACTOR) * self._pps_ticks_per_second)
         
         self._pps_last_tick = pps_tick
